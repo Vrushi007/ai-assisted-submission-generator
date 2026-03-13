@@ -1,1 +1,0 @@
-# ai-assistted-submission-generator
