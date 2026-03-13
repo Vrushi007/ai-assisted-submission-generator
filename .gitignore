@@ -45,7 +45,6 @@ venv.bak/
 
 # Uploads and user data
 uploads/
-files/
 storage/
 
 # Logs
