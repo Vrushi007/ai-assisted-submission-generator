@@ -19,6 +19,7 @@ from app.ai.models import (
 from app.ai.document_parser import document_parser
 from app.ai.content_mapper import content_mapper
 from app.ai.sarvam_service import sarvam_ai_service
+from app.ai.logging_utils import AILogger
 from app.dossier.models import DossierSection
 from app.files.models import UploadedFile
 
@@ -38,6 +39,20 @@ class AIProcessingService:
         """Process an uploaded file and extract content for dossier sections."""
         
         start_time = time.time()
+        
+        # Log the start of file processing
+        AILogger.log_simple_call(
+            function_name="process_uploaded_file",
+            model="orchestration",
+            duration=0,
+            success=True,
+            additional_data={
+                "file_id": str(file_id),
+                "submission_id": str(submission_id),
+                "auto_populate": auto_populate,
+                "status": "STARTED"
+            }
+        )
         
         try:
             # Get file record
@@ -71,8 +86,9 @@ class AIProcessingService:
                 print("Using Sarvam AI for content extraction...")
                 for section in dossier_sections:
                     try:
-                        # Get requirements for this section
-                        requirements = content_mapper.get_section_requirements(section.section_code)
+                        # Get requirements for this section (prefer template requirements over generic ones)
+                        requirements = (section.content_requirements or 
+                                      content_mapper.get_section_requirements(section.section_code))
                         
                         # Extract content using Sarvam AI
                         ai_mapping = sarvam_ai_service.extract_section_content(
@@ -114,6 +130,23 @@ class AIProcessingService:
                 success=True
             )
             
+            # Log successful completion
+            duration = time.time() - start_time
+            AILogger.log_simple_call(
+                function_name="process_uploaded_file",
+                model="orchestration",
+                duration=duration,
+                success=True,
+                additional_data={
+                    "file_id": str(file_id),
+                    "submission_id": str(submission_id),
+                    "sections_mapped": len(section_mappings),
+                    "sections_updated": len(updated_sections),
+                    "file_type": file_record.file_type.value if hasattr(file_record, 'file_type') else "unknown",
+                    "status": "COMPLETED"
+                }
+            )
+            
             return AIProcessingResponse(
                 file_id=file_id,
                 submission_id=submission_id,
@@ -123,6 +156,21 @@ class AIProcessingService:
             )
             
         except Exception as e:
+            # Log error
+            duration = time.time() - start_time
+            AILogger.log_simple_call(
+                function_name="process_uploaded_file",
+                model="orchestration",
+                duration=duration,
+                success=False,
+                error_message=str(e),
+                additional_data={
+                    "file_id": str(file_id),
+                    "submission_id": str(submission_id),
+                    "status": "ERROR"
+                }
+            )
+            
             # Return error response
             extraction_result = AIExtractionResult(
                 document_content=DocumentContent(
@@ -131,7 +179,7 @@ class AIProcessingService:
                     extraction_method="error"
                 ),
                 section_mappings=[],
-                processing_time=time.time() - start_time,
+                processing_time=duration,
                 success=False,
                 error_message=str(e)
             )
@@ -201,9 +249,12 @@ class AIProcessingService:
                         section.ai_confidence_score = mapping.confidence_score
                         section.source_file_id = source_file_id
                         
-                        # Update main content if it was AI-generated
-                        if not section.content or section.content in [c.get("content", "") for c in existing_conflicts]:
-                            section.content = new_content
+                        # Don't auto-update main content - let user decide
+                        # Only update if content was previously auto-generated from AI
+                        if (not section.content or section.content.strip() == "" or 
+                            section.content == section.ai_extracted_content):
+                            # Content is empty or was AI-generated, so we can update it
+                            pass  # Don't auto-update, let user choose
                     else:
                         print(f"   → Keeping EXISTING content (higher confidence: {section.ai_confidence_score:.2f})")
                         # Still track the conflict but don't change primary content
@@ -216,10 +267,9 @@ class AIProcessingService:
                     section.has_conflicts = False
                     section.conflict_sources = None
                     
-                    # If section has no content yet, populate with AI content
-                    if not section.content or section.content.strip() == "":
-                        section.content = new_content
-                        section.completion_percentage = min(int(mapping.confidence_score * 100), 80)  # Max 80% from AI
+                    # Don't auto-populate content - let user decide whether to use AI content
+                    # This keeps ai_extracted_content separate from user content
+                    section.completion_percentage = min(int(mapping.confidence_score * 100), 40)  # Lower % since it's just AI suggestion
                 
                 updated_sections.append(section.id)
         
@@ -242,7 +292,9 @@ class AIProcessingService:
         suggestions = []
         
         # Get requirements for this section
-        requirements = content_mapper.get_section_requirements(section.section_code)
+        # Use actual template requirements if available, fallback to generic ones
+        requirements = (section.content_requirements or 
+                       content_mapper.get_section_requirements(section.section_code))
         
         # If section has AI extracted content, create suggestion
         if section.ai_extracted_content and section.ai_confidence_score:

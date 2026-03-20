@@ -258,6 +258,9 @@ class DossierGenerationService:
                 "order_index": section.order_index,
                 "content_requirements": section.content_requirements or [],
                 "has_content": bool(section.content and section.content.strip()),
+                "content": section.content,
+                "ai_extracted_content": section.ai_extracted_content,
+                "ai_confidence_score": section.ai_confidence_score,
                 "children": []
             }
             

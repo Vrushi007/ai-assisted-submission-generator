@@ -258,11 +258,15 @@ const FileManagement: React.FC<FileManagementProps> = ({
 
       if (result && result.background_processing) {
         // Show success message for background processing
-        alert(`🤖 ${result.message}\n\n📋 Next Steps:\n• Go to the 'Dossier' tab to see live progress\n• Sections will update automatically as AI processes them\n• You can continue working while AI runs in the background`);
+        alert(
+          `🤖 ${result.message}\n\n📋 Next Steps:\n• Go to the 'Dossier' tab to see live progress\n• Sections will update automatically as AI processes them\n• You can continue working while AI runs in the background`,
+        );
         onFilesChange?.();
       } else if (result) {
         // Fallback for immediate processing
-        alert(`Auto-population completed! ${result.sections_updated} sections updated from ${result.files_processed} files.`);
+        alert(
+          `Auto-population completed! ${result.sections_updated} sections updated from ${result.files_processed} files.`,
+        );
         onFilesChange?.();
       }
     } catch (err: any) {
@@ -351,32 +355,7 @@ const FileManagement: React.FC<FileManagementProps> = ({
   }
 
   return (
-    <Box>
-      {/* Context Menu */}
-      <Menu
-        anchorEl={menuAnchorEl}
-        open={Boolean(menuAnchorEl)}
-        onClose={handleMenuClose}
-      >
-        <MenuItem onClick={handleDownloadFile}>
-          <DownloadIcon sx={{ mr: 1 }} />
-          Download
-        </MenuItem>
-        <MenuItem onClick={handleProcessWithAI}>
-          <AIIcon sx={{ mr: 1 }} />
-          Process with AI
-        </MenuItem>
-        <MenuItem onClick={handleExtractText}>
-          <ViewIcon sx={{ mr: 1 }} />
-          Extract Text
-        </MenuItem>
-        <Divider />
-        <MenuItem onClick={openDeleteDialog} sx={{ color: "error.main" }}>
-          <DeleteIcon sx={{ mr: 1 }} />
-          Delete File
-        </MenuItem>
-      </Menu>
-
+    <>
       {/* Upload Dialog */}
       <Dialog
         open={uploadDialogOpen}
@@ -482,314 +461,347 @@ const FileManagement: React.FC<FileManagementProps> = ({
           </Button>
         </DialogActions>
       </Dialog>
-      {/* Header */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 3,
-        }}
-      >
-        <Typography variant="h6">
-          Files ({filteredFiles.length} of {files.length})
-        </Typography>
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <Button
-            variant="contained"
-            startIcon={<UploadIcon />}
-            onClick={() => {
-              console.log("Upload button clicked - setting dialog to true");
-              setUploadDialogOpen(true);
-            }}
-          >
-            Upload Files
-          </Button>
-          {selectedSubmissionId && (
-            <Button
-              variant="outlined"
-              startIcon={<AutoIcon />}
-              onClick={handleAutoPopulate}
-              disabled={aiProcessing}
-            >
-              AI Auto-Populate
-            </Button>
-          )}
-        </Box>
-      </Box>
+      <Box>
+        {/* Context Menu */}
+        <Menu
+          anchorEl={menuAnchorEl}
+          open={Boolean(menuAnchorEl)}
+          onClose={handleMenuClose}
+        >
+          <MenuItem onClick={handleDownloadFile}>
+            <DownloadIcon sx={{ mr: 1 }} />
+            Download
+          </MenuItem>
+          <MenuItem onClick={handleProcessWithAI}>
+            <AIIcon sx={{ mr: 1 }} />
+            Process with AI
+          </MenuItem>
+          <MenuItem onClick={handleExtractText}>
+            <ViewIcon sx={{ mr: 1 }} />
+            Extract Text
+          </MenuItem>
+          <Divider />
+          <MenuItem onClick={openDeleteDialog} sx={{ color: "error.main" }}>
+            <DeleteIcon sx={{ mr: 1 }} />
+            Delete File
+          </MenuItem>
+        </Menu>
 
-      {/* Upload Progress */}
-      {uploadProgress.length > 0 && (
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                mb: 2,
+        {/* Header */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 3,
+          }}
+        >
+          <Typography variant="h6">
+            Files ({filteredFiles.length} of {files.length})
+          </Typography>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button
+              variant="contained"
+              startIcon={<UploadIcon />}
+              onClick={() => {
+                console.log("Upload button clicked - setting dialog to true");
+                setUploadDialogOpen(true);
               }}
             >
-              <Typography variant="h6">Upload Progress</Typography>
-              <Button size="small" onClick={clearUploadProgress}>
-                Clear
+              Upload Files
+            </Button>
+            {selectedSubmissionId && (
+              <Button
+                variant="outlined"
+                startIcon={<AutoIcon />}
+                onClick={handleAutoPopulate}
+                disabled={aiProcessing}
+              >
+                AI Auto-Populate
               </Button>
-            </Box>
-            {uploadProgress.map((progress, index) => (
-              <Box key={index} sx={{ mb: 2 }}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    mb: 1,
-                  }}
-                >
-                  <Typography variant="body2">{progress.file.name}</Typography>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    {progress.status === "completed" && (
-                      <CompleteIcon color="success" fontSize="small" />
-                    )}
-                    {progress.status === "error" && (
-                      <ErrorIcon color="error" fontSize="small" />
-                    )}
-                    {progress.status === "uploading" && (
-                      <PendingIcon color="info" fontSize="small" />
-                    )}
-                    <Typography variant="caption">
-                      {progress.status === "completed"
-                        ? "Complete"
-                        : progress.status === "error"
-                          ? "Failed"
-                          : `${progress.progress}%`}
-                    </Typography>
-                  </Box>
-                </Box>
-                {progress.status === "uploading" && (
-                  <LinearProgress
-                    variant="determinate"
-                    value={progress.progress}
-                  />
-                )}
-                {progress.error && (
-                  <Typography variant="caption" color="error">
-                    {progress.error}
-                  </Typography>
-                )}
+            )}
+          </Box>
+        </Box>
+
+        {/* Upload Progress */}
+        {uploadProgress.length > 0 && (
+          <Card sx={{ mb: 3 }}>
+            <CardContent>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mb: 2,
+                }}
+              >
+                <Typography variant="h6">Upload Progress</Typography>
+                <Button size="small" onClick={clearUploadProgress}>
+                  Clear
+                </Button>
               </Box>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
-          <FilterIcon />
-          <Typography variant="subtitle1">Filters</Typography>
-          <Button size="small" onClick={clearFilters}>
-            Clear
-          </Button>
-        </Box>
-
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
-            gap: 2,
-          }}
-        >
-          <TextField
-            placeholder="Search files..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-            fullWidth
-          />
-          <FormControl fullWidth>
-            <InputLabel>File Type</InputLabel>
-            <Select
-              value={fileTypeFilter}
-              onChange={(e) =>
-                setFileTypeFilter(e.target.value as FileType | "all")
-              }
-              label="File Type"
-            >
-              <MenuItem value="all">All Types</MenuItem>
-              <MenuItem value={FileType.PDF}>PDF</MenuItem>
-              <MenuItem value={FileType.DOCX}>Word Document</MenuItem>
-              <MenuItem value={FileType.XLSX}>Excel Spreadsheet</MenuItem>
-              <MenuItem value={FileType.OTHER}>Other</MenuItem>
-            </Select>
-          </FormControl>
-          <FormControl fullWidth>
-            <InputLabel>Submission</InputLabel>
-            <Select
-              value={submissionFilter}
-              onChange={(e) => setSubmissionFilter(e.target.value)}
-              label="Submission"
-            >
-              <MenuItem value="all">All Files</MenuItem>
-              <MenuItem value="">Project Files (No Submission)</MenuItem>
-              {submissions.map((submission) => (
-                <MenuItem key={submission.id} value={submission.id}>
-                  {submission.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-      </Paper>
-
-      {/* Error Alert */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
-
-      {/* Files Content */}
-      {filteredFiles.length === 0 && files.length > 0 ? (
-        // No filtered results (but files exist)
-        <Paper variant="outlined" sx={{ p: 4, textAlign: "center" }}>
-          <FileIcon sx={{ fontSize: 48, color: "text.secondary", mb: 2 }} />
-          <Typography variant="h6" gutterBottom>
-            No files match your filters
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Try adjusting your search terms or filters.
-          </Typography>
-          <Button size="small" onClick={clearFilters}>
-            Clear Filters
-          </Button>
-        </Paper>
-      ) : files.length > 0 ? (
-        // Files grid (when files exist)
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))",
-            gap: 2,
-          }}
-        >
-          {filteredFiles.map((file) => (
-            <Card key={file.id} sx={{ position: "relative" }}>
-              <CardContent>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    justifyContent: "space-between",
-                    mb: 2,
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center", flex: 1 }}>
-                    <Avatar
-                      sx={{
-                        bgcolor: `${getFileTypeColor(file.file_type)}.main`,
-                        mr: 2,
-                      }}
-                    >
-                      {getFileIcon(file.file_type)}
-                    </Avatar>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography
-                        variant="subtitle1"
-                        noWrap
-                        title={file.original_filename}
-                      >
-                        {file.original_filename}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {formatFileSize(file.file_size)} •{" "}
-                        {formatDate(file.created_at)}
+              {uploadProgress.map((progress, index) => (
+                <Box key={index} sx={{ mb: 2 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      mb: 1,
+                    }}
+                  >
+                    <Typography variant="body2">
+                      {progress.file.name}
+                    </Typography>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      {progress.status === "completed" && (
+                        <CompleteIcon color="success" fontSize="small" />
+                      )}
+                      {progress.status === "error" && (
+                        <ErrorIcon color="error" fontSize="small" />
+                      )}
+                      {progress.status === "uploading" && (
+                        <PendingIcon color="info" fontSize="small" />
+                      )}
+                      <Typography variant="caption">
+                        {progress.status === "completed"
+                          ? "Complete"
+                          : progress.status === "error"
+                            ? "Failed"
+                            : `${progress.progress}%`}
                       </Typography>
                     </Box>
                   </Box>
-
-                  <IconButton
-                    size="small"
-                    onClick={(e) => handleMenuOpen(e, file)}
-                  >
-                    <MoreVertIcon />
-                  </IconButton>
-                </Box>
-
-                <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
-                  <Chip
-                    label={file.file_type.toUpperCase()}
-                    color={getFileTypeColor(file.file_type)}
-                    size="small"
-                  />
-                  {file.is_processed && (
-                    <Chip
-                      label="AI Processed"
-                      color="success"
-                      size="small"
-                      icon={<CompleteIcon />}
+                  {progress.status === "uploading" && (
+                    <LinearProgress
+                      variant="determinate"
+                      value={progress.progress}
                     />
                   )}
+                  {progress.error && (
+                    <Typography variant="caption" color="error">
+                      {progress.error}
+                    </Typography>
+                  )}
                 </Box>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mb: 1 }}
-                >
-                  <strong>Associated with:</strong>{" "}
-                  {getSubmissionName(file.submission_id)}
-                </Typography>
+        {/* Filters */}
+        <Paper sx={{ p: 2, mb: 3 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+            <FilterIcon />
+            <Typography variant="subtitle1">Filters</Typography>
+            <Button size="small" onClick={clearFilters}>
+              Clear
+            </Button>
+          </Box>
 
-                {file.upload_purpose && (
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
+              gap: 2,
+            }}
+          >
+            <TextField
+              placeholder="Search files..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+              fullWidth
+            />
+            <FormControl fullWidth>
+              <InputLabel>File Type</InputLabel>
+              <Select
+                value={fileTypeFilter}
+                onChange={(e) =>
+                  setFileTypeFilter(e.target.value as FileType | "all")
+                }
+                label="File Type"
+              >
+                <MenuItem value="all">All Types</MenuItem>
+                <MenuItem value={FileType.PDF}>PDF</MenuItem>
+                <MenuItem value={FileType.DOCX}>Word Document</MenuItem>
+                <MenuItem value={FileType.XLSX}>Excel Spreadsheet</MenuItem>
+                <MenuItem value={FileType.OTHER}>Other</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Submission</InputLabel>
+              <Select
+                value={submissionFilter}
+                onChange={(e) => setSubmissionFilter(e.target.value)}
+                label="Submission"
+              >
+                <MenuItem value="all">All Files</MenuItem>
+                <MenuItem value="">Project Files (No Submission)</MenuItem>
+                {submissions.map((submission) => (
+                  <MenuItem key={submission.id} value={submission.id}>
+                    {submission.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+        </Paper>
+
+        {/* Error Alert */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
+
+        {/* Files Content */}
+        {filteredFiles.length === 0 && files.length > 0 ? (
+          // No filtered results (but files exist)
+          <Paper variant="outlined" sx={{ p: 4, textAlign: "center" }}>
+            <FileIcon sx={{ fontSize: 48, color: "text.secondary", mb: 2 }} />
+            <Typography variant="h6" gutterBottom>
+              No files match your filters
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Try adjusting your search terms or filters.
+            </Typography>
+            <Button size="small" onClick={clearFilters}>
+              Clear Filters
+            </Button>
+          </Paper>
+        ) : files.length > 0 ? (
+          // Files grid (when files exist)
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))",
+              gap: 2,
+            }}
+          >
+            {filteredFiles.map((file) => (
+              <Card key={file.id} sx={{ position: "relative" }}>
+                <CardContent>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      justifyContent: "space-between",
+                      mb: 2,
+                    }}
+                  >
+                    <Box
+                      sx={{ display: "flex", alignItems: "center", flex: 1 }}
+                    >
+                      <Avatar
+                        sx={{
+                          bgcolor: `${getFileTypeColor(file.file_type)}.main`,
+                          mr: 2,
+                        }}
+                      >
+                        {getFileIcon(file.file_type)}
+                      </Avatar>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography
+                          variant="subtitle1"
+                          noWrap
+                          title={file.original_filename}
+                        >
+                          {file.original_filename}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {formatFileSize(file.file_size)} •{" "}
+                          {formatDate(file.created_at)}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <IconButton
+                      size="small"
+                      onClick={(e) => handleMenuOpen(e, file)}
+                    >
+                      <MoreVertIcon />
+                    </IconButton>
+                  </Box>
+
+                  <Box
+                    sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}
+                  >
+                    <Chip
+                      label={file.file_type.toUpperCase()}
+                      color={getFileTypeColor(file.file_type)}
+                      size="small"
+                    />
+                    {file.is_processed && (
+                      <Chip
+                        label="AI Processed"
+                        color="success"
+                        size="small"
+                        icon={<CompleteIcon />}
+                      />
+                    )}
+                  </Box>
+
                   <Typography
                     variant="body2"
                     color="text.secondary"
                     sx={{ mb: 1 }}
                   >
-                    <strong>Purpose:</strong> {file.upload_purpose}
+                    <strong>Associated with:</strong>{" "}
+                    {getSubmissionName(file.submission_id)}
                   </Typography>
-                )}
 
-                {file.uploaded_by && (
-                  <Typography variant="body2" color="text.secondary">
-                    <strong>Uploaded by:</strong> {file.uploaded_by}
-                  </Typography>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </Box>
-      ) : (
-        // Empty state (only when no files at all) - MOVED TO END
-        <Box sx={{ textAlign: "center", py: 8 }}>
-          <CloudUploadIcon
-            sx={{ fontSize: 64, color: "text.secondary", mb: 2 }}
-          />
-          <Typography variant="h6" color="text.secondary" gutterBottom>
-            No Files Uploaded Yet
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Upload documents, images, and other files to support your
-            submissions.
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<UploadIcon />}
-            onClick={() => {
-              console.log("Empty state upload button clicked");
-              setUploadDialogOpen(true);
-            }}
-          >
-            Upload Files
-          </Button>
-        </Box>
-      )}
-    </Box>
+                  {file.upload_purpose && (
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mb: 1 }}
+                    >
+                      <strong>Purpose:</strong> {file.upload_purpose}
+                    </Typography>
+                  )}
+
+                  {file.uploaded_by && (
+                    <Typography variant="body2" color="text.secondary">
+                      <strong>Uploaded by:</strong> {file.uploaded_by}
+                    </Typography>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </Box>
+        ) : (
+          // Empty state (only when no files at all) - MOVED TO END
+          <Box sx={{ textAlign: "center", py: 8 }}>
+            <CloudUploadIcon
+              sx={{ fontSize: 64, color: "text.secondary", mb: 2 }}
+            />
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              No Files Uploaded Yet
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Upload documents, images, and other files to support your
+              submissions.
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<UploadIcon />}
+              onClick={() => {
+                console.log("Empty state upload button clicked");
+                setUploadDialogOpen(true);
+              }}
+            >
+              Upload Files
+            </Button>
+          </Box>
+        )}
+      </Box>
+    </>
   );
 };
 

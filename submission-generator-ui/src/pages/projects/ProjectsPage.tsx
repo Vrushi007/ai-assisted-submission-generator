@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -27,7 +27,7 @@ import {
   LinearProgress,
   Alert,
   Tooltip,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Add as AddIcon,
   Search as SearchIcon,
@@ -37,11 +37,11 @@ import {
   Visibility as ViewIcon,
   FolderOpen as FolderIcon,
   Refresh as RefreshIcon,
-} from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+} from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 
-import { Project, ProjectStatus, ProjectFormData } from '../../types';
-import useProjects from '../../hooks/useProjects';
+import { Project, ProjectStatus, ProjectFormData } from "../../types";
+import useProjects from "../../hooks/useProjects";
 
 const ProjectsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -65,11 +65,11 @@ const ProjectsPage: React.FC = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [formData, setFormData] = useState<ProjectFormData>({
-    name: '',
-    description: '',
-    client_name: '',
-    client_contact_email: '',
-    status: ProjectStatus.DRAFT,
+    name: "",
+    description: "",
+    client_name: "",
+    client_contact_email: "",
+    status: ProjectStatus.ACTIVE,
   });
 
   // Event handlers
@@ -78,79 +78,81 @@ const ProjectsPage: React.FC = () => {
   };
 
   const handleSearchKeyPress = (event: React.KeyboardEvent) => {
-    if (event.key === 'Enter') {
+    if (event.key === "Enter") {
       handleSearch();
     }
   };
 
-  const handleMenuClick = (event: React.MouseEvent<HTMLElement>, project: Project) => {
+  const handleMenuClick = (
+    event: React.MouseEvent<HTMLElement>,
+    project: Project,
+  ) => {
     setSelectedProject(project);
     setMenuAnchor(event.currentTarget);
   };
 
   const handleMenuClose = () => {
     setMenuAnchor(null);
-    setSelectedProject(null);
   };
 
   const handleCreateProject = async () => {
     try {
       const newProject = await createProject(formData);
       setCreateDialogOpen(false);
-      setFormData({ 
-        name: '', 
-        description: '', 
-        client_name: '', 
-        client_contact_email: '', 
-        status: ProjectStatus.DRAFT 
+      setFormData({
+        name: "",
+        description: "",
+        client_name: "",
+        client_contact_email: "",
+        status: ProjectStatus.ACTIVE,
       });
-      
+
       // Navigate to the new project
       setCurrentProject(newProject);
       navigate(`/projects/${newProject.id}`);
     } catch (error) {
-      console.error('Failed to create project:', error);
+      console.error("Failed to create project:", error);
     }
   };
 
   const handleEditProject = async () => {
     if (!selectedProject) return;
-    
+
     try {
       await updateProject(selectedProject.id, formData);
       setEditDialogOpen(false);
-      setFormData({ 
-        name: '', 
-        description: '', 
-        client_name: '', 
-        client_contact_email: '', 
-        status: ProjectStatus.DRAFT 
+      setFormData({
+        name: "",
+        description: "",
+        client_name: "",
+        client_contact_email: "",
+        status: ProjectStatus.ACTIVE,
       });
       handleMenuClose();
     } catch (error) {
-      console.error('Failed to update project:', error);
+      console.error("Failed to update project:", error);
     }
   };
 
   const handleDeleteProject = async () => {
     if (!selectedProject) return;
-    
+
     try {
       await deleteProject(selectedProject.id);
       setDeleteDialogOpen(false);
       handleMenuClose();
     } catch (error) {
-      console.error('Failed to delete project:', error);
+      console.error("Failed to delete project:", error);
     }
   };
 
   const openCreateDialog = () => {
-    setFormData({ 
-      name: '', 
-      description: '', 
-      client_name: '', 
-      client_contact_email: '', 
-      status: ProjectStatus.DRAFT 
+    setFormData({
+      name: "",
+      description: "",
+      client_name: "",
+      client_contact_email: "",
+      status: ProjectStatus.ACTIVE,
     });
     setCreateDialogOpen(true);
   };
@@ -159,9 +161,9 @@ const ProjectsPage: React.FC = () => {
     if (selectedProject) {
       setFormData({
         name: selectedProject.name,
-        description: selectedProject.description || '',
-        client_name: selectedProject.client_name || '',
-        client_contact_email: selectedProject.client_contact_email || '',
+        description: selectedProject.description || "",
+        client_name: selectedProject.client_name || "",
+        client_contact_email: selectedProject.client_contact_email || "",
         status: selectedProject.status,
       });
       setEditDialogOpen(true);
@@ -177,15 +179,15 @@ const ProjectsPage: React.FC = () => {
   const getStatusColor = (status: ProjectStatus) => {
     switch (status) {
       case ProjectStatus.ACTIVE:
-        return 'success';
+        return "success";
       case ProjectStatus.COMPLETED:
-        return 'info';
+        return "info";
       case ProjectStatus.ON_HOLD:
-        return 'warning';
+        return "warning";
       case ProjectStatus.CANCELLED:
-        return 'error';
+        return "error";
       default:
-        return 'default';
+        return "default";
     }
   };
 
@@ -210,8 +212,8 @@ const ProjectsPage: React.FC = () => {
         <Typography variant="h4" gutterBottom>
           Projects
         </Typography>
-        <Alert 
-          severity="error" 
+        <Alert
+          severity="error"
           action={
             <IconButton onClick={() => loadProjects()}>
               <RefreshIcon />
@@ -227,7 +229,14 @@ const ProjectsPage: React.FC = () => {
   return (
     <Box>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
+      >
         <Typography variant="h4" gutterBottom>
           Projects
         </Typography>
@@ -282,7 +291,9 @@ const ProjectsPage: React.FC = () => {
               {projects.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
-                    <FolderIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+                    <FolderIcon
+                      sx={{ fontSize: 48, color: "text.secondary", mb: 2 }}
+                    />
                     <Typography variant="h6" color="text.secondary">
                       No projects found
                     </Typography>
@@ -328,9 +339,7 @@ const ProjectsPage: React.FC = () => {
                           <ViewIcon />
                         </IconButton>
                       </Tooltip>
-                      <IconButton
-                        onClick={(e) => handleMenuClick(e, project)}
-                      >
+                      <IconButton onClick={(e) => handleMenuClick(e, project)}>
                         <MoreVertIcon />
                       </IconButton>
                     </TableCell>
@@ -352,28 +361,37 @@ const ProjectsPage: React.FC = () => {
           <EditIcon sx={{ mr: 1 }} />
           Edit
         </MenuItem>
-        <MenuItem onClick={openDeleteDialog} sx={{ color: 'error.main' }}>
+        <MenuItem onClick={openDeleteDialog} sx={{ color: "error.main" }}>
           <DeleteIcon sx={{ mr: 1 }} />
           Delete
         </MenuItem>
       </Menu>
 
       {/* Create Project Dialog */}
-      <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Create New Project</DialogTitle>
         <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
             <TextField
               label="Project Name"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               required
               fullWidth
             />
             <TextField
               label="Description"
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               multiline
               rows={3}
               fullWidth
@@ -381,7 +399,9 @@ const ProjectsPage: React.FC = () => {
             <TextField
               label="Client Name"
               value={formData.client_name}
-              onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, client_name: e.target.value })
+              }
               required
               fullWidth
             />
@@ -389,19 +409,29 @@ const ProjectsPage: React.FC = () => {
               label="Client Contact Email"
               type="email"
               value={formData.client_contact_email}
-              onChange={(e) => setFormData({ ...formData, client_contact_email: e.target.value })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  client_contact_email: e.target.value,
+                })
+              }
               fullWidth
             />
             <FormControl fullWidth>
               <InputLabel>Status</InputLabel>
               <Select
                 value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value as ProjectStatus })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    status: e.target.value as ProjectStatus,
+                  })
+                }
                 label="Status"
               >
                 {Object.values(ProjectStatus).map((status) => (
                   <MenuItem key={status} value={status}>
-                    {status.replace('_', ' ').toUpperCase()}
+                    {status.replace("_", " ").toUpperCase()}
                   </MenuItem>
                 ))}
               </Select>
@@ -410,8 +440,8 @@ const ProjectsPage: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
-          <Button 
-            onClick={handleCreateProject} 
+          <Button
+            onClick={handleCreateProject}
             variant="contained"
             disabled={!formData.name.trim() || !formData.client_name.trim()}
           >
@@ -421,21 +451,30 @@ const ProjectsPage: React.FC = () => {
       </Dialog>
 
       {/* Edit Project Dialog */}
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Edit Project</DialogTitle>
         <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
             <TextField
               label="Project Name"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               required
               fullWidth
             />
             <TextField
               label="Description"
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               multiline
               rows={3}
               fullWidth
@@ -444,12 +483,17 @@ const ProjectsPage: React.FC = () => {
               <InputLabel>Status</InputLabel>
               <Select
                 value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value as ProjectStatus })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    status: e.target.value as ProjectStatus,
+                  })
+                }
                 label="Status"
               >
                 {Object.values(ProjectStatus).map((status) => (
                   <MenuItem key={status} value={status}>
-                    {status.replace('_', ' ').toUpperCase()}
+                    {status.replace("_", " ").toUpperCase()}
                   </MenuItem>
                 ))}
               </Select>
@@ -458,8 +502,8 @@ const ProjectsPage: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-          <Button 
-            onClick={handleEditProject} 
+          <Button
+            onClick={handleEditProject}
             variant="contained"
             disabled={!formData.name.trim()}
           >
@@ -469,16 +513,24 @@ const ProjectsPage: React.FC = () => {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
         <DialogTitle>Delete Project</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete "{selectedProject?.name}"? This action cannot be undone.
+            Are you sure you want to delete "{selectedProject?.name}"? This
+            action cannot be undone.
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleDeleteProject} color="error" variant="contained">
+          <Button
+            onClick={handleDeleteProject}
+            color="error"
+            variant="contained"
+          >
             Delete
           </Button>
         </DialogActions>

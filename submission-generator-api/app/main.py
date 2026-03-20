@@ -2,6 +2,7 @@
 Main FastAPI application entry point.
 """
 
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -23,6 +24,8 @@ from app.dashboard.router import router as dashboard_router
 
 def create_application() -> FastAPI:
     """Create and configure the FastAPI application."""
+    
+    # AI logging is configured in logging_utils.py to write to logs.txt
     
     app = FastAPI(
         title=settings.APP_NAME,
@@ -71,6 +74,21 @@ async def startup_event():
     # Create upload directory if it doesn't exist
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     os.makedirs(settings.TEMPLATES_DIR, exist_ok=True)
+    
+    # Log application startup
+    from app.ai.logging_utils import AILogger
+    AILogger.log_simple_call(
+        function_name="application_startup",
+        model="system",
+        duration=0,
+        success=True,
+        additional_data={
+            "app_name": settings.APP_NAME,
+            "app_version": settings.APP_VERSION,
+            "upload_dir": settings.UPLOAD_DIR,
+            "templates_dir": settings.TEMPLATES_DIR
+        }
+    )
 
 
 @app.get("/api/health")

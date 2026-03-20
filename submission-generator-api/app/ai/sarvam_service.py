@@ -4,6 +4,7 @@ Sarvam AI service for intelligent document processing and content extraction.
 
 import os
 import json
+import time
 from typing import List, Dict, Any, Optional
 from sarvamai import SarvamAI
 from sarvamai.core.api_error import ApiError
@@ -11,6 +12,7 @@ from sarvamai.core.api_error import ApiError
 from app.core.config import settings
 from app.ai.models import DocumentContent, SectionMapping
 from app.dossier.models import DossierSection
+from app.ai.logging_utils import AILogger, AIRequestLog, AIResponseLog
 
 
 class SarvamAIService:
@@ -48,9 +50,9 @@ class SarvamAIService:
                 section_requirements or []
             )
             
-            # Call Sarvam AI
-            response = self.client.chat.completions(
-                messages=[
+            # Prepare request data for logging
+            request_data = {
+                "messages": [
                     {
                         "role": "system", 
                         "content": self._get_system_prompt()
@@ -60,11 +62,43 @@ class SarvamAIService:
                         "content": prompt
                     }
                 ],
-                **self.model_config
+                **self.model_config,
+                "section_code": section.section_code,
+                "section_title": section.section_title
+            }
+            
+            # Start logging
+            request_log = AILogger.start_request(
+                function_name="extract_section_content",
+                model=self.model_config["model"],
+                request_data=request_data
             )
+            
+            start_time = time.time()
+            
+            # Call Sarvam AI
+            response = self.client.chat.completions(
+                messages=request_data["messages"],
+                model=request_data["model"],
+                temperature=request_data["temperature"],
+                reasoning_effort=request_data["reasoning_effort"]
+            )
+            
+            duration = time.time() - start_time
             
             # Parse the response
             ai_response = response.choices[0].message.content
+            
+            # Log successful response
+            response_log = AIResponseLog(
+                success=True,
+                duration_seconds=duration,
+                response_data=ai_response,
+                response_length=len(ai_response) if ai_response else 0,
+                tokens_used=getattr(response.usage, 'total_tokens', None) if hasattr(response, 'usage') and response.usage else None
+            )
+            
+            AILogger.end_request(request_log, response_log)
             
             # Extract structured content from AI response
             extracted_content, confidence = self._parse_ai_response(ai_response)
@@ -82,10 +116,40 @@ class SarvamAIService:
             return None
             
         except ApiError as e:
-            print(f"Sarvam AI API error: {e}")
+            duration = time.time() - start_time if 'start_time' in locals() else 0
+            response_log = AIResponseLog(
+                success=False,
+                duration_seconds=duration,
+                error_message=f"Sarvam AI API error: {str(e)}"
+            )
+            if 'request_log' in locals():
+                AILogger.end_request(request_log, response_log)
+            else:
+                AILogger.log_simple_call(
+                    "extract_section_content", 
+                    self.model_config["model"], 
+                    duration, 
+                    False, 
+                    f"Sarvam AI API error: {str(e)}"
+                )
             return None
         except Exception as e:
-            print(f"Error in Sarvam AI extraction: {e}")
+            duration = time.time() - start_time if 'start_time' in locals() else 0
+            response_log = AIResponseLog(
+                success=False,
+                duration_seconds=duration,
+                error_message=f"Error in AI content extraction: {str(e)}"
+            )
+            if 'request_log' in locals():
+                AILogger.end_request(request_log, response_log)
+            else:
+                AILogger.log_simple_call(
+                    "extract_section_content", 
+                    self.model_config["model"], 
+                    duration, 
+                    False, 
+                    f"Error in AI content extraction: {str(e)}"
+                )
             return None
     
     def generate_section_content(
@@ -101,8 +165,9 @@ class SarvamAIService:
         try:
             prompt = self._build_generation_prompt(section, requirements, context_data)
             
-            response = self.client.chat.completions(
-                messages=[
+            # Prepare request data for logging
+            request_data = {
+                "messages": [
                     {
                         "role": "system", 
                         "content": self._get_generation_system_prompt()
@@ -112,16 +177,80 @@ class SarvamAIService:
                         "content": prompt
                     }
                 ],
-                **self.model_config
+                **self.model_config,
+                "section_code": section.section_code,
+                "section_title": section.section_title,
+                "requirements_count": len(requirements),
+                "context_data": context_data or {}
+            }
+            
+            # Start logging
+            request_log = AILogger.start_request(
+                function_name="generate_section_content",
+                model=self.model_config["model"],
+                request_data=request_data
             )
             
-            return response.choices[0].message.content
+            start_time = time.time()
+            
+            response = self.client.chat.completions(
+                messages=request_data["messages"],
+                model=request_data["model"],
+                temperature=request_data["temperature"],
+                reasoning_effort=request_data["reasoning_effort"]
+            )
+            
+            duration = time.time() - start_time
+            ai_response = response.choices[0].message.content
+            
+            # Log successful response
+            response_log = AIResponseLog(
+                success=True,
+                duration_seconds=duration,
+                response_data=ai_response,
+                response_length=len(ai_response) if ai_response else 0,
+                tokens_used=getattr(response.usage, 'total_tokens', None) if hasattr(response, 'usage') and response.usage else None
+            )
+            
+            AILogger.end_request(request_log, response_log)
+            
+            return ai_response
             
         except ApiError as e:
-            print(f"Sarvam AI API error in generation: {e}")
+            duration = time.time() - start_time if 'start_time' in locals() else 0
+            response_log = AIResponseLog(
+                success=False,
+                duration_seconds=duration,
+                error_message=f"Sarvam AI API error in generation: {str(e)}"
+            )
+            if 'request_log' in locals():
+                AILogger.end_request(request_log, response_log)
+            else:
+                AILogger.log_simple_call(
+                    "generate_section_content", 
+                    self.model_config["model"], 
+                    duration, 
+                    False, 
+                    f"Sarvam AI API error in generation: {str(e)}"
+                )
             return self._fallback_content(section, requirements)
         except Exception as e:
-            print(f"Error in Sarvam AI generation: {e}")
+            duration = time.time() - start_time if 'start_time' in locals() else 0
+            response_log = AIResponseLog(
+                success=False,
+                duration_seconds=duration,
+                error_message=f"Error in Sarvam AI generation: {str(e)}"
+            )
+            if 'request_log' in locals():
+                AILogger.end_request(request_log, response_log)
+            else:
+                AILogger.log_simple_call(
+                    "generate_section_content", 
+                    self.model_config["model"], 
+                    duration, 
+                    False, 
+                    f"Error in Sarvam AI generation: {str(e)}"
+                )
             return self._fallback_content(section, requirements)
     
     def analyze_document_completeness(
@@ -136,8 +265,9 @@ class SarvamAIService:
         try:
             prompt = self._build_analysis_prompt(document_text, required_sections)
             
-            response = self.client.chat.completions(
-                messages=[
+            # Prepare request data for logging
+            request_data = {
+                "messages": [
                     {
                         "role": "system", 
                         "content": self._get_analysis_system_prompt()
@@ -147,22 +277,69 @@ class SarvamAIService:
                         "content": prompt
                     }
                 ],
-                model="sarvam-105b",  # Use full model for complex analysis
-                temperature=0.2,
-                reasoning_effort="high"
+                "model": "sarvam-105b",  # Use full model for complex analysis
+                "temperature": 0.2,
+                "reasoning_effort": "high",
+                "required_sections_count": len(required_sections)
+            }
+            
+            # Start logging
+            request_log = AILogger.start_request(
+                function_name="analyze_document_coverage",
+                model="sarvam-105b",
+                request_data=request_data
             )
+            
+            start_time = time.time()
+            
+            response = self.client.chat.completions(
+                messages=request_data["messages"],
+                model=request_data["model"],
+                temperature=request_data["temperature"],
+                reasoning_effort=request_data["reasoning_effort"]
+            )
+            
+            duration = time.time() - start_time
             
             # Parse analysis response
             analysis_text = response.choices[0].message.content
-            return self._parse_analysis_response(analysis_text, required_sections)
+            analysis_result = self._parse_analysis_response(analysis_text, required_sections)
+            
+            # Log successful response
+            response_log = AIResponseLog(
+                success=True,
+                duration_seconds=duration,
+                response_data=analysis_text,
+                response_length=len(analysis_text) if analysis_text else 0,
+                tokens_used=getattr(response.usage, 'total_tokens', None) if hasattr(response, 'usage') and response.usage else None
+            )
+            
+            AILogger.end_request(request_log, response_log)
+            
+            return analysis_result
             
         except Exception as e:
-            print(f"Error in document analysis: {e}")
+            duration = time.time() - start_time if 'start_time' in locals() else 0
+            response_log = AIResponseLog(
+                success=False,
+                duration_seconds=duration,
+                error_message=f"Error in document analysis: {str(e)}"
+            )
+            if 'request_log' in locals():
+                AILogger.end_request(request_log, response_log)
+            else:
+                AILogger.log_simple_call(
+                    "analyze_document_coverage", 
+                    "sarvam-105b", 
+                    duration, 
+                    False, 
+                    f"Error in document analysis: {str(e)}"
+                )
             return {"coverage_score": 0.0, "missing_sections": [], "recommendations": []}
     
     def _get_system_prompt(self) -> str:
         """System prompt for content extraction."""
-        return """You are an expert regulatory affairs specialist with deep knowledge of medical device submissions, particularly IMDRF (International Medical Device Regulators Forum) guidelines.
+        return """You are an expert regulatory affairs specialist with deep knowledge of medical device submissions across multiple regulatory frameworks including IMDRF, EU MDR, FDA, Health Canada, and other international guidelines.
 
 Your task is to extract relevant information from medical device documents and map it to specific regulatory sections.
 
@@ -180,18 +357,35 @@ Response format:
 
     def _get_generation_system_prompt(self) -> str:
         """System prompt for content generation."""
-        return """You are an expert regulatory affairs consultant specializing in medical device submissions.
+        return """You are an expert regulatory affairs consultant specializing in medical device submissions across multiple regulatory frameworks.
 
-Generate professional, compliant content for regulatory submission sections based on IMDRF guidelines.
+Generate professional, compliant content for regulatory submission sections based on the specific template requirements provided.
 
 Requirements:
-1. Use appropriate regulatory language and terminology
-2. Include all required elements for the section
+1. Use appropriate regulatory language and terminology for the target regulatory framework
+2. Include all required elements for the section as specified in the template
 3. Provide clear structure with headings and bullet points
 4. Include placeholders for specific information that must be provided
-5. Ensure content meets regulatory standards and expectations
-6. Focus on Health Canada and international regulatory requirements"""
+5. Ensure content meets the specific regulatory standards and expectations for the target jurisdiction
+6. Adapt language and requirements to match the regulatory framework (IMDRF, EU MDR, FDA, etc.)"""
 
+    def _get_regulatory_framework(self, template_source: str) -> str:
+        """Determine regulatory framework from template source."""
+        template_lower = template_source.lower()
+        
+        if 'eu' in template_lower or 'mdr' in template_lower or 'europe' in template_lower:
+            return 'EU MDR (Medical Device Regulation)'
+        elif 'fda' in template_lower or 'usa' in template_lower or 'us' in template_lower:
+            return 'FDA (US Food and Drug Administration)'
+        elif 'imdrf' in template_lower or 'medical_device_license' in template_lower:
+            return 'IMDRF (International Medical Device Regulators Forum)'
+        elif 'health_canada' in template_lower or 'hc' in template_lower:
+            return 'Health Canada'
+        elif 'tga' in template_lower or 'australia' in template_lower:
+            return 'TGA (Therapeutic Goods Administration - Australia)'
+        else:
+            return 'International Medical Device Standards'
+    
     def _get_analysis_system_prompt(self) -> str:
         """System prompt for document analysis."""
         return """You are a regulatory compliance analyst specializing in medical device submissions.
@@ -215,13 +409,19 @@ Focus on:
         
         requirements_text = "\n".join([f"- {req}" for req in requirements]) if requirements else "Standard regulatory requirements"
         
+        # Determine regulatory framework from template source
+        template_source = section.template_source or 'Standard Template'
+        framework = self._get_regulatory_framework(template_source)
+        
         return f"""Extract information for the following regulatory section from the provided document:
 
-**Section:** {section.section_code} - {section.section_title}
+**Regulatory Section:** {section.section_code} - {section.section_title}
+**Template Source:** {template_source}
+**Regulatory Framework:** {framework}
 
 **Description:** {section.section_description or 'No description provided'}
 
-**Requirements:**
+**Template Requirements:**
 {requirements_text}
 
 **Document Content:**
@@ -258,23 +458,30 @@ NOTES: [Any important observations or gaps]"""
             for key, value in context_data.items():
                 context_text += f"- {key}: {value}\n"
         
-        return f"""Generate professional regulatory content for the following section:
+        # Determine regulatory framework from template source
+        template_source = section.template_source or 'Standard Template'
+        framework = self._get_regulatory_framework(template_source)
+        
+        return f"""Generate professional regulatory content for the following template section:
 
-**Section:** {section.section_code} - {section.section_title}
+**Regulatory Section:** {section.section_code} - {section.section_title}
+**Template Source:** {template_source}
+**Regulatory Framework:** {framework}
 
 **Description:** {section.section_description or 'Standard regulatory section'}
 
-**Requirements:**
+**Template Requirements:**
 {requirements_text}
 {context_text}
 
 **Instructions:**
 1. Generate comprehensive, professional content that addresses all requirements
-2. Use appropriate regulatory language and structure
+2. Use appropriate regulatory language and structure for {framework}
 3. Include clear headings and organized information
 4. Add [PLACEHOLDER] markers where specific company/device information is needed
-5. Ensure content meets Health Canada and international standards
-6. Make it ready for regulatory review
+5. Ensure content meets {framework} standards and expectations
+6. Follow the specific formatting and content requirements for this regulatory framework
+7. Make it ready for regulatory review
 
 Generate the complete section content now:"""
 

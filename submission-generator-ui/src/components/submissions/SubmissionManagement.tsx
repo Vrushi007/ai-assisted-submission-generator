@@ -256,178 +256,8 @@ const SubmissionManagement: React.FC<SubmissionManagementProps> = ({
     return new Date(dateString).toLocaleDateString();
   };
 
-  // Empty state
-  if (submissions.length === 0) {
-    return (
-      <Box sx={{ textAlign: "center", py: 8 }}>
-        <SubmissionIcon sx={{ fontSize: 64, color: "text.secondary", mb: 2 }} />
-        <Typography variant="h6" color="text.secondary" gutterBottom>
-          No Submissions Yet
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Create your first regulatory submission to get started.
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={openCreateDialog}
-          disabled={products.length === 0}
-        >
-          Create Submission
-        </Button>
-        {products.length === 0 && (
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ mt: 2, display: "block" }}
-          >
-            You need to create at least one product before creating submissions.
-          </Typography>
-        )}
-      </Box>
-    );
-  }
-
   return (
-    <Box>
-      {/* Header */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 3,
-        }}
-      >
-        <Typography variant="h6">Submissions ({submissions.length})</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={openCreateDialog}
-          disabled={products.length === 0}
-        >
-          Create Submission
-        </Button>
-      </Box>
-
-      {/* Submissions Grid */}
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(400px, 1fr))",
-          gap: 2,
-        }}
-      >
-        {submissions.map((submission) => (
-          <Card key={submission.id} sx={{ position: "relative" }}>
-            <CardContent>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  justifyContent: "space-between",
-                  mb: 2,
-                }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center", flex: 1 }}>
-                  <Avatar sx={{ bgcolor: "primary.main", mr: 2 }}>
-                    {getStatusIcon(submission.status)}
-                  </Avatar>
-                  <Box>
-                    <Typography variant="h6" component="h3">
-                      {submission.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {getProductName(submission.product_id)}
-                    </Typography>
-                  </Box>
-                </Box>
-
-                <IconButton
-                  size="small"
-                  onClick={(e) => handleMenuOpen(e, submission)}
-                >
-                  <MoreVertIcon />
-                </IconButton>
-              </Box>
-
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                <strong>Target Date:</strong>{" "}
-                {formatDate(submission.target_submission_date)}
-              </Typography>
-
-              {submission.submission_type && (
-                <Typography variant="body2" color="text.secondary" paragraph>
-                  <strong>Type:</strong> {submission.submission_type}
-                </Typography>
-              )}
-
-              <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
-                <Chip
-                  label={submission.status.replace("_", " ").toUpperCase()}
-                  color={getStatusColor(submission.status)}
-                  size="small"
-                />
-              </Box>
-
-              {submission.completion_percentage !== undefined && (
-                <Box sx={{ mt: 2 }}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      mb: 1,
-                    }}
-                  >
-                    <Typography variant="body2" color="text.secondary">
-                      Progress
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {submission.completion_percentage}%
-                    </Typography>
-                  </Box>
-                  <LinearProgress
-                    variant="determinate"
-                    value={submission.completion_percentage}
-                    sx={{ borderRadius: 1 }}
-                  />
-                </Box>
-              )}
-            </CardContent>
-
-            <CardActions sx={{ justifyContent: "space-between", px: 2, pb: 2 }}>
-              <Typography variant="caption" color="text.secondary">
-                Created {formatDate(submission.created_at)}
-              </Typography>
-              <Button size="small" startIcon={<ViewIcon />}>
-                View Details
-              </Button>
-            </CardActions>
-          </Card>
-        ))}
-      </Box>
-
-      {/* Context Menu */}
-      <Menu
-        anchorEl={menuAnchorEl}
-        open={Boolean(menuAnchorEl)}
-        onClose={handleMenuClose}
-      >
-        <MenuItem onClick={() => console.log("View submission details")}>
-          <ViewIcon sx={{ mr: 1 }} />
-          View Details
-        </MenuItem>
-        <MenuItem onClick={openEditDialog}>
-          <EditIcon sx={{ mr: 1 }} />
-          Edit Submission
-        </MenuItem>
-        <Divider />
-        <MenuItem onClick={openDeleteDialog} sx={{ color: "error.main" }}>
-          <DeleteIcon sx={{ mr: 1 }} />
-          Delete Submission
-        </MenuItem>
-      </Menu>
-
+    <>
       {/* Create Submission Dialog */}
       <Dialog
         open={createDialogOpen}
@@ -444,7 +274,12 @@ const SubmissionManagement: React.FC<SubmissionManagementProps> = ({
           )}
           <LocalizationProvider dateAdapter={AdapterDateFns}>
             <Box
-              sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 2,
+                mt: 1,
+              }}
             >
               <TextField
                 label="Submission Name"
@@ -477,13 +312,20 @@ const SubmissionManagement: React.FC<SubmissionManagementProps> = ({
                 <Select
                   value={formData.submission_type}
                   onChange={(e) =>
-                    setFormData({ ...formData, submission_type: e.target.value })
+                    setFormData({
+                      ...formData,
+                      submission_type: e.target.value,
+                    })
                   }
                   label="Submission Type"
                 >
-                  <MenuItem value="medical_device_license">Medical Device License</MenuItem>
+                  <MenuItem value="medical_device_license">
+                    Medical Device License
+                  </MenuItem>
                   <MenuItem value="ivd_license">IVD License</MenuItem>
-                  <MenuItem value="medical_device_amendment">Medical Device Amendment</MenuItem>
+                  <MenuItem value="medical_device_amendment">
+                    Medical Device Amendment
+                  </MenuItem>
                   <MenuItem value="ivd_amendment">IVD Amendment</MenuItem>
                 </Select>
               </FormControl>
@@ -546,13 +388,18 @@ const SubmissionManagement: React.FC<SubmissionManagementProps> = ({
           )}
           <LocalizationProvider dateAdapter={AdapterDateFns}>
             <Box
-              sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 2,
+                mt: 1,
+              }}
             >
               <TextField
                 label="Submission Name"
                 value={formData.name}
                 onChange={(e) => {
-                  console.log('Edit dialog - Name changed to:', e.target.value);
+                  console.log("Edit dialog - Name changed to:", e.target.value);
                   setFormData({ ...formData, name: e.target.value });
                 }}
                 required
@@ -563,8 +410,14 @@ const SubmissionManagement: React.FC<SubmissionManagementProps> = ({
                 <Select
                   value={formData.product_id}
                   onChange={(e) => {
-                    console.log('Edit dialog - Product changed to:', e.target.value);
-                    setFormData({ ...formData, product_id: e.target.value });
+                    console.log(
+                      "Edit dialog - Product changed to:",
+                      e.target.value,
+                    );
+                    setFormData({
+                      ...formData,
+                      product_id: e.target.value,
+                    });
                   }}
                   label="Product"
                 >
@@ -580,14 +433,24 @@ const SubmissionManagement: React.FC<SubmissionManagementProps> = ({
                 <Select
                   value={formData.submission_type}
                   onChange={(e) => {
-                    console.log('Edit dialog - Submission Type changed to:', e.target.value);
-                    setFormData({ ...formData, submission_type: e.target.value });
+                    console.log(
+                      "Edit dialog - Submission Type changed to:",
+                      e.target.value,
+                    );
+                    setFormData({
+                      ...formData,
+                      submission_type: e.target.value,
+                    });
                   }}
                   label="Submission Type"
                 >
-                  <MenuItem value="medical_device_license">Medical Device License</MenuItem>
+                  <MenuItem value="medical_device_license">
+                    Medical Device License
+                  </MenuItem>
                   <MenuItem value="ivd_license">IVD License</MenuItem>
-                  <MenuItem value="medical_device_amendment">Medical Device Amendment</MenuItem>
+                  <MenuItem value="medical_device_amendment">
+                    Medical Device Amendment
+                  </MenuItem>
                   <MenuItem value="ivd_amendment">IVD Amendment</MenuItem>
                 </Select>
               </FormControl>
@@ -663,7 +526,192 @@ const SubmissionManagement: React.FC<SubmissionManagementProps> = ({
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+      {submissions.length > 0 ? (
+        <Box>
+          {/* Header */}
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 3,
+            }}
+          >
+            <Typography variant="h6">
+              Submissions ({submissions.length})
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={openCreateDialog}
+              disabled={products.length === 0}
+            >
+              Create Submission
+            </Button>
+          </Box>
+
+          {/* Submissions Grid */}
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(400px, 1fr))",
+              gap: 2,
+            }}
+          >
+            {submissions.map((submission) => (
+              <Card key={submission.id} sx={{ position: "relative" }}>
+                <CardContent>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      justifyContent: "space-between",
+                      mb: 2,
+                    }}
+                  >
+                    <Box
+                      sx={{ display: "flex", alignItems: "center", flex: 1 }}
+                    >
+                      <Avatar sx={{ bgcolor: "primary.main", mr: 2 }}>
+                        {getStatusIcon(submission.status)}
+                      </Avatar>
+                      <Box>
+                        <Typography variant="h6" component="h3">
+                          {submission.name}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {getProductName(submission.product_id)}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <IconButton
+                      size="small"
+                      onClick={(e) => handleMenuOpen(e, submission)}
+                    >
+                      <MoreVertIcon />
+                    </IconButton>
+                  </Box>
+
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 2 }}
+                  >
+                    <strong>Target Date:</strong>{" "}
+                    {formatDate(submission.target_submission_date)}
+                  </Typography>
+
+                  {submission.submission_type && (
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      paragraph
+                    >
+                      <strong>Type:</strong> {submission.submission_type}
+                    </Typography>
+                  )}
+
+                  <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+                    <Chip
+                      label={submission.status.replace("_", " ").toUpperCase()}
+                      color={getStatusColor(submission.status)}
+                      size="small"
+                    />
+                  </Box>
+
+                  {submission.completion_percentage !== undefined && (
+                    <Box sx={{ mt: 2 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          mb: 1,
+                        }}
+                      >
+                        <Typography variant="body2" color="text.secondary">
+                          Progress
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {submission.completion_percentage}%
+                        </Typography>
+                      </Box>
+                      <LinearProgress
+                        variant="determinate"
+                        value={submission.completion_percentage}
+                        sx={{ borderRadius: 1 }}
+                      />
+                    </Box>
+                  )}
+                </CardContent>
+
+                <CardActions
+                  sx={{ justifyContent: "space-between", px: 2, pb: 2 }}
+                >
+                  <Typography variant="caption" color="text.secondary">
+                    Created {formatDate(submission.created_at)}
+                  </Typography>
+                  <Button size="small" startIcon={<ViewIcon />}>
+                    View Details
+                  </Button>
+                </CardActions>
+              </Card>
+            ))}
+          </Box>
+
+          {/* Context Menu */}
+          <Menu
+            anchorEl={menuAnchorEl}
+            open={Boolean(menuAnchorEl)}
+            onClose={handleMenuClose}
+          >
+            <MenuItem onClick={() => console.log("View submission details")}>
+              <ViewIcon sx={{ mr: 1 }} />
+              View Details
+            </MenuItem>
+            <MenuItem onClick={openEditDialog}>
+              <EditIcon sx={{ mr: 1 }} />
+              Edit Submission
+            </MenuItem>
+            <Divider />
+            <MenuItem onClick={openDeleteDialog} sx={{ color: "error.main" }}>
+              <DeleteIcon sx={{ mr: 1 }} />
+              Delete Submission
+            </MenuItem>
+          </Menu>
+        </Box>
+      ) : (
+        <Box sx={{ textAlign: "center", py: 8 }}>
+          <SubmissionIcon
+            sx={{ fontSize: 64, color: "text.secondary", mb: 2 }}
+          />
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            No Submissions Yet
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Create your first regulatory submission to get started.
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={openCreateDialog}
+            disabled={products.length === 0}
+          >
+            Create Submission
+          </Button>
+          {products.length === 0 && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ mt: 2, display: "block" }}
+            >
+              You need to create at least one product before creating
+              submissions.
+            </Typography>
+          )}
+        </Box>
+      )}
+    </>
   );
 };
 

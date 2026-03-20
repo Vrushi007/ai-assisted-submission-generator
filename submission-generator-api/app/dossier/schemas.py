@@ -48,6 +48,11 @@ class DossierSectionResponse(DossierSectionBase, UUIDSchema, TimestampSchema):
     is_completed: bool
     completion_percentage: int
     
+    # Content fields
+    content: Optional[str] = Field(None, description="User-edited section content")
+    ai_extracted_content: Optional[str] = Field(None, description="AI-extracted content from files")
+    ai_confidence_score: Optional[float] = Field(None, description="AI confidence score (0-1)")
+    
     # Computed fields
     child_sections_count: Optional[int] = Field(None, description="Number of child sections")
     extracted_content_count: Optional[int] = Field(None, description="Number of linked extracted content items")

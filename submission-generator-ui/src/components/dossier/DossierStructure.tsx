@@ -132,6 +132,30 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, level, onSectionClic
                       variant="filled"
                     />
                     
+                    {/* AI Content Status Chip */}
+                    {section.ai_extracted_content && !section.content && (
+                      <Tooltip title={`AI has generated content for this section but user hasn't reviewed it yet${section.ai_confidence_score ? ` (${Math.round(section.ai_confidence_score * 100)}% confidence)` : ''}`}>
+                        <Chip 
+                          label={`AI Pending Review${section.ai_confidence_score ? ` (${Math.round(section.ai_confidence_score * 100)}%)` : ''}`}
+                          size="small" 
+                          color="warning"
+                          variant="outlined"
+                          icon={<AIIcon />}
+                        />
+                      </Tooltip>
+                    )}
+                    {section.ai_extracted_content && section.content && (
+                      <Tooltip title={`This section contains AI-assisted content that has been reviewed${section.ai_confidence_score ? ` (${Math.round(section.ai_confidence_score * 100)}% confidence)` : ''}`}>
+                        <Chip 
+                          label="AI Assisted" 
+                          size="small" 
+                          color="info"
+                          variant="outlined"
+                          icon={<AIIcon />}
+                        />
+                      </Tooltip>
+                    )}
+                    
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Typography variant="caption">
                         {Math.round(section.completion_percentage)}% complete
@@ -185,15 +209,15 @@ const SectionDetailDialog: React.FC<{
   const { generateContent, processing: aiProcessing } = useAI();
   const [content, setContent] = useState('');
   const [editMode, setEditMode] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
 
   React.useEffect(() => {
     if (section) {
-      // Priority: user content > AI extracted content > placeholder content
-      const initialContent = section.content || 
-                            section.ai_extracted_content || 
-                            section.placeholder_content || '';
+      // Only show user content in the text area - don't auto-populate with AI content
+      const initialContent = section.content || '';
       setContent(initialContent);
       setEditMode(!section.content); // Only auto-edit if no user content exists
+      setIsCompleted(section.status === 'completed');
     }
   }, [section]);
 
@@ -210,9 +234,16 @@ const SectionDetailDialog: React.FC<{
   const handleMarkComplete = async () => {
     if (!section) return;
     
+    // Optimistically update the UI immediately
+    setIsCompleted(true);
+    
     const success = await markSectionComplete(submissionId, section.id, 'Current User');
     if (success) {
+      // Force update callback to refresh the dialog
       onUpdate();
+    } else {
+      // Revert optimistic update if API call failed
+      setIsCompleted(false);
     }
   };
 
@@ -241,9 +272,9 @@ const SectionDetailDialog: React.FC<{
           </Typography>
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Chip 
-              label={section.status.replace('_', ' ').toUpperCase()} 
+              label={isCompleted ? 'COMPLETED' : section.status.replace('_', ' ').toUpperCase()} 
               size="small" 
-              color={section.status === 'completed' ? 'success' : 'default'}
+              color={isCompleted ? 'success' : 'default'}
             />
             {section.is_required && (
               <Chip label="Required" size="small" color="error" variant="outlined" />
@@ -280,11 +311,11 @@ const SectionDetailDialog: React.FC<{
               <Typography variant="subtitle2">
                 Content:
               </Typography>
-              {section.ai_extracted_content && !section.content && (
+              {section.ai_extracted_content && (
                 <Chip 
-                  label="AI Generated" 
+                  label={section.content ? "AI Assisted" : "AI Available"} 
                   size="small" 
-                  color="info" 
+                  color={section.content ? "secondary" : "info"}
                   icon={<AIIcon />}
                 />
               )}
@@ -328,10 +359,62 @@ const SectionDetailDialog: React.FC<{
             sx={{ 
               '& .MuiInputBase-input': { 
                 fontFamily: 'monospace',
-                fontSize: '0.875rem'
+                fontSize: '0.875rem',
+                backgroundColor: section.ai_extracted_content && !section.content 
+                  ? 'rgba(33, 150, 243, 0.02)' // Light blue tint for AI suggestions
+                  : 'transparent'
               }
             }}
           />
+          
+          {section.ai_extracted_content && !section.content && (
+            <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(33, 150, 243, 0.08)', border: '1px solid rgba(33, 150, 243, 0.2)', borderRadius: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <AIIcon color="info" />
+                  <Typography variant="subtitle2" color="info.main" sx={{ fontWeight: 'bold' }}>
+                    AI Generated Content Available
+                  </Typography>
+                  {section.ai_confidence_score && (
+                    <Chip 
+                      label={`${Math.round(section.ai_confidence_score * 100)}% confidence`}
+                      size="small" 
+                      color="info"
+                      variant="outlined"
+                    />
+                  )}
+                </Box>
+                <Button
+                  startIcon={<CheckCircleIcon />}
+                  onClick={() => {
+                    setContent(section.ai_extracted_content || '');
+                    setEditMode(true);
+                  }}
+                  size="small"
+                  variant="contained"
+                  color="info"
+                >
+                  Use This Content
+                </Button>
+              </Box>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  fontFamily: 'monospace', 
+                  fontSize: '0.875rem',
+                  color: 'text.secondary',
+                  whiteSpace: 'pre-wrap',
+                  maxHeight: '150px',
+                  overflow: 'auto',
+                  p: 1,
+                  bgcolor: 'rgba(0,0,0,0.02)',
+                  borderRadius: 0.5
+                }}
+              >
+                {section.ai_extracted_content}
+              </Typography>
+            </Box>
+          )}
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -361,7 +444,7 @@ const SectionDetailDialog: React.FC<{
           </Button>
         )}
         
-        {section.status !== 'completed' && (
+        {!isCompleted && (
           <Button 
             onClick={handleMarkComplete} 
             variant="contained"
@@ -382,6 +465,7 @@ const DossierStructure: React.FC<DossierStructureProps> = ({ submissionId }) => 
     selectedSection, 
     loading, 
     error, 
+    loadDossier,
     loadSection, 
     regenerateDossier,
     getDossierStats,
@@ -397,9 +481,13 @@ const DossierStructure: React.FC<DossierStructureProps> = ({ submissionId }) => 
     setDetailDialogOpen(true);
   };
 
-  const handleCloseDialog = () => {
+  const handleCloseDialog = async () => {
     setDetailDialogOpen(false);
     setSelectedSection(null);
+    
+    // Force refresh the dossier tree when dialog closes
+    // This ensures any changes made in the dialog are reflected in the main view
+    await loadDossier(submissionId);
   };
 
   const handleRegenerateDossier = async () => {
@@ -574,9 +662,12 @@ const DossierStructure: React.FC<DossierStructureProps> = ({ submissionId }) => 
         section={selectedSection}
         submissionId={submissionId}
         onClose={handleCloseDialog}
-        onUpdate={() => {
-          // Refresh the dossier data
-          // The hook will automatically reload
+        onUpdate={async () => {
+          // Refresh both the section details and the main dossier tree
+          if (selectedSection) {
+            await loadSection(submissionId, selectedSection.id);
+          }
+          await loadDossier(submissionId);
         }}
       />
     </Box>
