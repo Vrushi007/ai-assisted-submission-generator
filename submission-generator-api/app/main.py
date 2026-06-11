@@ -3,13 +3,13 @@ Main FastAPI application entry point.
 """
 
 import logging
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 
 from app.core.config import settings
-from app.core.database import engine, Base
+from app.core.security import require_api_key
 import app.models  # Import all models to register them
 from app.projects.router import router as projects_router
 from app.products.router import router as products_router
@@ -38,27 +38,71 @@ def create_application() -> FastAPI:
     # CORS middleware
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[
-            "http://localhost:3030"
-        ],  # React dev server (multiple ports)
+        allow_origins=settings.cors_allowed_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
 
     # Include routers
-    app.include_router(projects_router, prefix="/api/projects", tags=["projects"])
-    app.include_router(products_router, prefix="/api/products", tags=["products"])
-    app.include_router(submissions_router, prefix="/api/submissions", tags=["submissions"])
-    app.include_router(dossier_router, prefix="/api/dossier", tags=["dossier"])
-    app.include_router(files_router, prefix="/api/files", tags=["files"])
-    app.include_router(ai_router, prefix="/api/ai", tags=["ai"])
-    app.include_router(reviews_router, prefix="/api/reviews", tags=["reviews"])
-    app.include_router(validation_router, prefix="/api/validation", tags=["validation"])
-    app.include_router(dashboard_router, prefix="/api/dashboard", tags=["dashboard"])
+    protected_route_dependencies = [Depends(require_api_key)]
+    app.include_router(
+        projects_router,
+        prefix="/api/projects",
+        tags=["projects"],
+        dependencies=protected_route_dependencies,
+    )
+    app.include_router(
+        products_router,
+        prefix="/api/products",
+        tags=["products"],
+        dependencies=protected_route_dependencies,
+    )
+    app.include_router(
+        submissions_router,
+        prefix="/api/submissions",
+        tags=["submissions"],
+        dependencies=protected_route_dependencies,
+    )
+    app.include_router(
+        dossier_router,
+        prefix="/api/dossier",
+        tags=["dossier"],
+        dependencies=protected_route_dependencies,
+    )
+    app.include_router(
+        files_router,
+        prefix="/api/files",
+        tags=["files"],
+        dependencies=protected_route_dependencies,
+    )
+    app.include_router(
+        ai_router,
+        prefix="/api/ai",
+        tags=["ai"],
+        dependencies=protected_route_dependencies,
+    )
+    app.include_router(
+        reviews_router,
+        prefix="/api/reviews",
+        tags=["reviews"],
+        dependencies=protected_route_dependencies,
+    )
+    app.include_router(
+        validation_router,
+        prefix="/api/validation",
+        tags=["validation"],
+        dependencies=protected_route_dependencies,
+    )
+    app.include_router(
+        dashboard_router,
+        prefix="/api/dashboard",
+        tags=["dashboard"],
+        dependencies=protected_route_dependencies,
+    )
 
     # Static file serving for uploads
-    if os.path.exists(settings.UPLOAD_DIR):
+    if settings.SERVE_UPLOADS_PUBLIC and os.path.exists(settings.UPLOAD_DIR):
         app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 
     return app

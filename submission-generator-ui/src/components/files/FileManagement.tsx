@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -55,6 +55,8 @@ interface FileManagementProps {
   files: UploadedFile[];
   submissions: Submission[];
   onFilesChange?: () => void;
+  /** When set (e.g. submission details page), uploads default to this submission */
+  defaultSubmissionId?: string;
 }
 
 const FileManagement: React.FC<FileManagementProps> = ({
@@ -62,6 +64,7 @@ const FileManagement: React.FC<FileManagementProps> = ({
   files,
   submissions,
   onFilesChange,
+  defaultSubmissionId,
 }) => {
   const {
     uploadFile,
@@ -88,10 +91,18 @@ const FileManagement: React.FC<FileManagementProps> = ({
   const [selectedFile, setSelectedFile] = useState<UploadedFile | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [selectedSubmissionId, setSelectedSubmissionId] = useState<string>("");
+  const [selectedSubmissionId, setSelectedSubmissionId] = useState<string>(
+    () => defaultSubmissionId ?? "",
+  );
   const [uploadPurpose, setUploadPurpose] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  useEffect(() => {
+    if (defaultSubmissionId) {
+      setSelectedSubmissionId(defaultSubmissionId);
+    }
+  }, [defaultSubmissionId]);
 
   // Filter files
   const filteredFiles = files.filter((file) => {
@@ -275,7 +286,7 @@ const FileManagement: React.FC<FileManagementProps> = ({
   };
 
   const resetUploadForm = () => {
-    setSelectedSubmissionId("");
+    setSelectedSubmissionId(defaultSubmissionId ?? "");
     setUploadPurpose("");
     setError(null);
   };
@@ -372,21 +383,27 @@ const FileManagement: React.FC<FileManagementProps> = ({
           )}
 
           <Box sx={{ mb: 3 }}>
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>Associate with Submission (Optional)</InputLabel>
-              <Select
-                value={selectedSubmissionId}
-                onChange={(e) => setSelectedSubmissionId(e.target.value)}
-                label="Associate with Submission (Optional)"
-              >
-                <MenuItem value="">Project Files (No Submission)</MenuItem>
-                {submissions.map((submission) => (
-                  <MenuItem key={submission.id} value={submission.id}>
-                    {submission.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            {defaultSubmissionId ? (
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Files will be uploaded and linked to this submission.
+              </Typography>
+            ) : (
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel>Associate with Submission (Optional)</InputLabel>
+                <Select
+                  value={selectedSubmissionId}
+                  onChange={(e) => setSelectedSubmissionId(e.target.value)}
+                  label="Associate with Submission (Optional)"
+                >
+                  <MenuItem value="">Project Files (No Submission)</MenuItem>
+                  {submissions.map((submission) => (
+                    <MenuItem key={submission.id} value={submission.id}>
+                      {submission.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
 
             <TextField
               label="Upload Purpose (Optional)"
@@ -503,10 +520,7 @@ const FileManagement: React.FC<FileManagementProps> = ({
             <Button
               variant="contained"
               startIcon={<UploadIcon />}
-              onClick={() => {
-                console.log("Upload button clicked - setting dialog to true");
-                setUploadDialogOpen(true);
-              }}
+              onClick={() => setUploadDialogOpen(true)}
             >
               Upload Files
             </Button>

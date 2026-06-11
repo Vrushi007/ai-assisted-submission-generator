@@ -255,6 +255,7 @@ const Dashboard: React.FC = () => {
               >
                 Create New Project
               </Button>
+              {/* Demo: File Manager & standalone AI Assistant not implemented — hide shortcuts
               <Button
                 variant="outlined"
                 startIcon={<FilesIcon />}
@@ -271,6 +272,7 @@ const Dashboard: React.FC = () => {
               >
                 AI Assistant
               </Button>
+              */}
             </Box>
           </CardContent>
         </Card>

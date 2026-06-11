@@ -203,7 +203,7 @@ async def get_project_stats(
     return stats
 
 
-@router.get("/", response_model=ProjectStats, dependencies=[Depends(get_db)])
+@router.get("/stats", response_model=ProjectStats, dependencies=[Depends(get_db)])
 async def get_overall_project_stats(
     db: Session = Depends(get_db)
 ):

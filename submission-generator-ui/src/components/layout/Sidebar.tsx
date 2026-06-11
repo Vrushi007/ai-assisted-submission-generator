@@ -1,5 +1,5 @@
-import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Box,
   List,
@@ -11,21 +11,18 @@ import {
   Typography,
   Divider,
   Chip,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Dashboard as DashboardIcon,
   FolderOpen as ProjectsIcon,
   Assignment as SubmissionsIcon,
   Description as DossierIcon,
-  CloudUpload as FilesIcon,
+  // CloudUpload as FilesIcon, // File Manager — not implemented for demo
   Psychology as AIIcon,
-  RateReview as ReviewsIcon,
-  Assessment as ReportsIcon,
-  Settings as SettingsIcon,
-} from '@mui/icons-material';
+} from "@mui/icons-material";
 
-import { NavItem } from '../../types';
-import { useApp } from '../../contexts/AppContext';
+import { NavItem } from "../../types";
+import { useApp } from "../../contexts/AppContext";
 
 interface SidebarProps {
   onItemClick?: () => void;
@@ -33,62 +30,43 @@ interface SidebarProps {
 
 const navigationItems: NavItem[] = [
   {
-    id: 'dashboard',
-    label: 'Dashboard',
-    path: '/dashboard',
+    id: "dashboard",
+    label: "Dashboard",
+    path: "/dashboard",
     icon: DashboardIcon,
   },
   {
-    id: 'projects',
-    label: 'Projects',
-    path: '/projects',
+    id: "projects",
+    label: "Projects",
+    path: "/projects",
     icon: ProjectsIcon,
   },
   {
-    id: 'submissions',
-    label: 'Submissions',
-    path: '/submissions',
+    id: "submissions",
+    label: "Submissions",
+    path: "/submissions",
     icon: SubmissionsIcon,
   },
-  {
-    id: 'dossier',
-    label: 'Dossier Builder',
-    path: '/dossier',
-    icon: DossierIcon,
-  },
-  {
-    id: 'files',
-    label: 'File Manager',
-    path: '/files',
-    icon: FilesIcon,
-  },
-  {
-    id: 'ai',
-    label: 'AI Assistant',
-    path: '/ai',
-    icon: AIIcon,
-  },
-];
-
-const secondaryItems: NavItem[] = [
-  {
-    id: 'reviews',
-    label: 'Reviews',
-    path: '/reviews',
-    icon: ReviewsIcon,
-  },
-  {
-    id: 'reports',
-    label: 'Reports',
-    path: '/reports',
-    icon: ReportsIcon,
-  },
-  {
-    id: 'settings',
-    label: 'Settings',
-    path: '/settings',
-    icon: SettingsIcon,
-  },
+  // {
+  //   id: 'dossier',
+  //   label: 'Dossier Builder',
+  //   path: '/dossier',
+  //   icon: DossierIcon,
+  // },
+  // Demo: File Manager not implemented yet — hide from sidebar
+  // {
+  //   id: 'files',
+  //   label: 'File Manager',
+  //   path: '/files',
+  //   icon: FilesIcon,
+  // },
+  // Demo: standalone AI Assistant page not implemented yet — hide from sidebar
+  // {
+  //   id: 'ai',
+  //   label: 'AI Assistant',
+  //   path: '/ai',
+  //   icon: AIIcon,
+  // },
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ onItemClick }) => {
@@ -104,8 +82,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onItemClick }) => {
   };
 
   const isActive = (path: string) => {
-    if (path === '/dashboard') {
-      return location.pathname === '/' || location.pathname === '/dashboard';
+    if (path === "/dashboard") {
+      return location.pathname === "/" || location.pathname === "/dashboard";
     }
     return location.pathname.startsWith(path);
   };
@@ -123,14 +101,14 @@ const Sidebar: React.FC<SidebarProps> = ({ onItemClick }) => {
             borderRadius: 1,
             mx: 1,
             mb: 0.5,
-            '&.Mui-selected': {
-              backgroundColor: 'primary.main',
-              color: 'primary.contrastText',
-              '&:hover': {
-                backgroundColor: 'primary.dark',
+            "&.Mui-selected": {
+              backgroundColor: "primary.main",
+              color: "primary.contrastText",
+              "&:hover": {
+                backgroundColor: "primary.dark",
               },
-              '& .MuiListItemIcon-root': {
-                color: 'primary.contrastText',
+              "& .MuiListItemIcon-root": {
+                color: "primary.contrastText",
               },
             },
           }}
@@ -140,7 +118,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onItemClick }) => {
               <Icon />
             </ListItemIcon>
           )}
-          <ListItemText 
+          <ListItemText
             primary={item.label}
             primaryTypographyProps={{
               fontWeight: active ? 600 : 400,
@@ -152,17 +130,22 @@ const Sidebar: React.FC<SidebarProps> = ({ onItemClick }) => {
   };
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       {/* Header */}
       <Toolbar>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <AIIcon color="primary" />
-          <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 600 }}>
+          <Typography
+            variant="h6"
+            noWrap
+            component="div"
+            sx={{ fontWeight: 600 }}
+          >
             RegSub AI
           </Typography>
         </Box>
       </Toolbar>
-      
+
       <Divider />
 
       {/* Current Context */}
@@ -178,7 +161,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onItemClick }) => {
                 size="small"
                 color="primary"
                 variant="outlined"
-                sx={{ mt: 0.5, maxWidth: '100%' }}
+                sx={{ mt: 0.5, maxWidth: "100%" }}
               />
             </Box>
           )}
@@ -192,7 +175,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onItemClick }) => {
                 size="small"
                 color="secondary"
                 variant="outlined"
-                sx={{ mt: 0.5, maxWidth: '100%' }}
+                sx={{ mt: 0.5, maxWidth: "100%" }}
               />
             </Box>
           )}
@@ -202,25 +185,26 @@ const Sidebar: React.FC<SidebarProps> = ({ onItemClick }) => {
       {(state.currentProject || state.currentSubmission) && <Divider />}
 
       {/* Main Navigation */}
-      <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
-        <List sx={{ pt: 1 }}>
-          {navigationItems.map(renderNavItem)}
-        </List>
-
-        <Divider sx={{ mx: 2, my: 2 }} />
-
-        {/* Secondary Navigation */}
-        <List>
-          {secondaryItems.map(renderNavItem)}
-        </List>
+      <Box sx={{ flexGrow: 1, overflow: "auto" }}>
+        <List sx={{ pt: 1 }}>{navigationItems.map(renderNavItem)}</List>
       </Box>
 
       {/* Footer */}
-      <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
-        <Typography variant="caption" color="text.secondary" align="center" display="block">
+      <Box sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          align="center"
+          display="block"
+        >
           Health Canada IMDRF
         </Typography>
-        <Typography variant="caption" color="text.secondary" align="center" display="block">
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          align="center"
+          display="block"
+        >
           Submission Builder v1.0
         </Typography>
       </Box>

@@ -27,7 +27,7 @@ class SarvamAIService:
         
         # Model configuration
         self.model_config = {
-            "model": "sarvam-105b-32k",  # Cost-efficient variant for moderate tasks
+            "model": settings.SARVAM_MODEL,
             "temperature": 0.3,  # Lower temperature for more consistent regulatory content
             "reasoning_effort": "medium"  # Balanced reasoning for document analysis
         }
@@ -277,7 +277,7 @@ class SarvamAIService:
                         "content": prompt
                     }
                 ],
-                "model": "sarvam-105b",  # Use full model for complex analysis
+                "model": settings.SARVAM_MODEL,  # Use full model for complex analysis
                 "temperature": 0.2,
                 "reasoning_effort": "high",
                 "required_sections_count": len(required_sections)
@@ -286,7 +286,7 @@ class SarvamAIService:
             # Start logging
             request_log = AILogger.start_request(
                 function_name="analyze_document_coverage",
-                model="sarvam-105b",
+                model=settings.SARVAM_MODEL,
                 request_data=request_data
             )
             
@@ -330,7 +330,7 @@ class SarvamAIService:
             else:
                 AILogger.log_simple_call(
                     "analyze_document_coverage", 
-                    "sarvam-105b", 
+                    settings.SARVAM_MODEL, 
                     duration, 
                     False, 
                     f"Error in document analysis: {str(e)}"

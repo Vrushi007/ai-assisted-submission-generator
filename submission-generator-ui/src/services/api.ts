@@ -33,6 +33,11 @@ class ApiService {
     // Request interceptor
     this.api.interceptors.request.use(
       (config) => {
+        const internalApiKey = process.env.REACT_APP_INTERNAL_API_KEY;
+        if (internalApiKey) {
+          config.headers['X-API-Key'] = internalApiKey;
+        }
+
         // Add auth token if available
         const token = localStorage.getItem('auth_token');
         if (token) {

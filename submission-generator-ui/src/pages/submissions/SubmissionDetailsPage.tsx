@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -31,7 +31,7 @@ import {
   FormControl,
   InputLabel,
   Select,
-} from '@mui/material';
+} from "@mui/material";
 import {
   ArrowBack as BackIcon,
   Edit as EditIcon,
@@ -48,21 +48,30 @@ import {
   Timeline as TimelineIcon,
   Build as BuildIcon,
   Visibility as ViewIcon,
-  Download as DownloadIcon,
   Upload as UploadIcon,
   Assessment as ReportIcon,
   Schedule as ScheduleIcon,
   Psychology as AIIcon,
-} from '@mui/icons-material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+} from "@mui/icons-material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 
-import { Submission, SubmissionStatus, SubmissionFormData, Project, Product, UploadedFile, HumanReview } from '../../types';
-import { useSubmissions, useProjects, useProducts, useFiles } from '../../hooks';
-import { LoadingSpinner } from '../../components/common';
-import { DossierStructure } from '../../components/dossier';
-import { AIDashboard } from '../../components/ai';
+import {
+  Submission,
+  SubmissionStatus,
+  SubmissionFormData,
+} from "../../types";
+import {
+  useSubmissions,
+  useProjects,
+  useProducts,
+  useFiles,
+} from "../../hooks";
+import { LoadingSpinner } from "../../components/common";
+import { DossierStructure } from "../../components/dossier";
+import { FileManagement } from "../../components/files";
+import { AIDashboard } from "../../components/ai";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -88,8 +97,9 @@ function TabPanel(props: TabPanelProps) {
 const SubmissionDetailsPage: React.FC = () => {
   const { submissionId } = useParams<{ submissionId: string }>();
   const navigate = useNavigate();
-  
-  const { getSubmission, updateSubmission, deleteSubmission, loading } = useSubmissions();
+
+  const { getSubmission, updateSubmission, deleteSubmission, loading } =
+    useSubmissions();
   const { projects, loadProjects } = useProjects();
   const { products, loadProducts } = useProducts();
   const { files, loadFiles } = useFiles();
@@ -104,10 +114,10 @@ const SubmissionDetailsPage: React.FC = () => {
 
   // Form state for editing
   const [formData, setFormData] = useState<SubmissionFormData>({
-    name: '',
-    submission_type: '',
-    product_id: '',
-    target_submission_date: '',
+    name: "",
+    submission_type: "",
+    product_id: "",
+    target_submission_date: "",
   });
 
   // Load data
@@ -123,39 +133,48 @@ const SubmissionDetailsPage: React.FC = () => {
 
   const loadSubmissionData = async () => {
     if (!submissionId) return;
-    
+
     try {
       const submissionData = await getSubmission(submissionId);
       setSubmission(submissionData);
-      
+
       // Set form data for editing
       setFormData({
         name: submissionData.name,
-        submission_type: submissionData.submission_type || '',
+        submission_type: submissionData.submission_type || "",
         product_id: submissionData.product_id,
-        target_submission_date: submissionData.target_submission_date || '',
+        target_submission_date: submissionData.target_submission_date || "",
       });
     } catch (err: any) {
-      setError('Failed to load submission details');
+      setError("Failed to load submission details");
     }
   };
 
   // Helper functions
-  const getStatusColor = (status: SubmissionStatus): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
+  const getStatusColor = (
+    status: SubmissionStatus,
+  ):
+    | "default"
+    | "primary"
+    | "secondary"
+    | "error"
+    | "info"
+    | "success"
+    | "warning" => {
     switch (status) {
       case SubmissionStatus.DRAFT:
-        return 'default';
+        return "default";
       case SubmissionStatus.AI_PROCESSING:
-        return 'info';
+        return "info";
       case SubmissionStatus.HUMAN_REVIEW:
-        return 'warning';
+        return "warning";
       case SubmissionStatus.SUBMITTED:
       case SubmissionStatus.APPROVED:
-        return 'success';
+        return "success";
       case SubmissionStatus.REJECTED:
-        return 'error';
+        return "error";
       default:
-        return 'default';
+        return "default";
     }
   };
 
@@ -178,17 +197,17 @@ const SubmissionDetailsPage: React.FC = () => {
   };
 
   const getProjectName = (projectId: string): string => {
-    const project = projects.find(p => p.id === projectId);
-    return project?.name || 'Unknown Project';
+    const project = projects.find((p) => p.id === projectId);
+    return project?.name || "Unknown Project";
   };
 
   const getProductName = (productId: string): string => {
-    const product = products.find(p => p.id === productId);
-    return product?.name || 'Unknown Product';
+    const product = products.find((p) => p.id === productId);
+    return product?.name || "Unknown Product";
   };
 
   const formatDate = (dateString?: string): string => {
-    if (!dateString) return 'Not set';
+    if (!dateString) return "Not set";
     return new Date(dateString).toLocaleDateString();
   };
 
@@ -210,7 +229,7 @@ const SubmissionDetailsPage: React.FC = () => {
       setSubmission(updatedSubmission);
       setEditDialogOpen(false);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to update submission');
+      setError(err.response?.data?.detail || "Failed to update submission");
     }
   };
 
@@ -220,9 +239,9 @@ const SubmissionDetailsPage: React.FC = () => {
     try {
       setError(null);
       await deleteSubmission(submission.id);
-      navigate('/submissions');
+      navigate("/submissions");
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to delete submission');
+      setError(err.response?.data?.detail || "Failed to delete submission");
     }
   };
 
@@ -271,18 +290,18 @@ const SubmissionDetailsPage: React.FC = () => {
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box>
         {/* Header */}
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-          <IconButton onClick={() => navigate('/submissions')} sx={{ mr: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+          <IconButton onClick={() => navigate("/submissions")} sx={{ mr: 2 }}>
             <BackIcon />
           </IconButton>
-          
+
           <Box sx={{ flex: 1 }}>
             <Breadcrumbs sx={{ mb: 1 }}>
-              <Link 
-                component="button" 
-                variant="body2" 
-                onClick={() => navigate('/submissions')}
-                sx={{ textDecoration: 'none' }}
+              <Link
+                component="button"
+                variant="body2"
+                onClick={() => navigate("/submissions")}
+                sx={{ textDecoration: "none" }}
               >
                 Submissions
               </Link>
@@ -290,13 +309,11 @@ const SubmissionDetailsPage: React.FC = () => {
                 {submission.name}
               </Typography>
             </Breadcrumbs>
-            
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Typography variant="h4">
-                {submission.name}
-              </Typography>
+
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Typography variant="h4">{submission.name}</Typography>
               <Chip
-                label={submission.status.replace('_', ' ').toUpperCase()}
+                label={submission.status.replace("_", " ").toUpperCase()}
                 color={getStatusColor(submission.status)}
                 icon={getStatusIcon(submission.status)}
               />
@@ -316,16 +333,18 @@ const SubmissionDetailsPage: React.FC = () => {
         )}
 
         {/* Overview Cards */}
-        <Box sx={{ 
-          display: 'grid', 
-          gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' }, 
-          gap: 2, 
-          mb: 3 
-        }}>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", md: "repeat(4, 1fr)" },
+            gap: 2,
+            mb: 3,
+          }}
+        >
           <Card>
             <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Avatar sx={{ bgcolor: 'primary.main' }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Avatar sx={{ bgcolor: "primary.main" }}>
                   <SubmissionIcon />
                 </Avatar>
                 <Box>
@@ -340,8 +359,8 @@ const SubmissionDetailsPage: React.FC = () => {
 
           <Card>
             <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Avatar sx={{ bgcolor: 'secondary.main' }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Avatar sx={{ bgcolor: "secondary.main" }}>
                   <BuildIcon />
                 </Avatar>
                 <Box>
@@ -356,8 +375,8 @@ const SubmissionDetailsPage: React.FC = () => {
 
           <Card>
             <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Avatar sx={{ bgcolor: 'info.main' }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Avatar sx={{ bgcolor: "info.main" }}>
                   <ScheduleIcon />
                 </Avatar>
                 <Box>
@@ -372,8 +391,8 @@ const SubmissionDetailsPage: React.FC = () => {
 
           <Card>
             <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Avatar sx={{ bgcolor: 'success.main' }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Avatar sx={{ bgcolor: "success.main" }}>
                   <ReportIcon />
                 </Avatar>
                 <Box>
@@ -391,7 +410,9 @@ const SubmissionDetailsPage: React.FC = () => {
         {submission.completion_percentage !== undefined && (
           <Card sx={{ mb: 3 }}>
             <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+              <Box
+                sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}
+              >
                 <Typography variant="h6">Overall Progress</Typography>
                 <Typography variant="body2" color="text.secondary">
                   {submission.completion_percentage}% Complete
@@ -408,7 +429,7 @@ const SubmissionDetailsPage: React.FC = () => {
 
         {/* Tabs */}
         <Card>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
             <Tabs value={tabValue} onChange={handleTabChange}>
               <Tab label="Overview" icon={<ViewIcon />} />
               <Tab label="Dossier" icon={<DossierIcon />} />
@@ -420,7 +441,13 @@ const SubmissionDetailsPage: React.FC = () => {
 
           <TabPanel value={tabValue} index={0}>
             {/* Overview Tab */}
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' }, gap: 3 }}>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: "2fr 1fr" },
+                gap: 3,
+              }}
+            >
               <Box>
                 <Typography variant="h6" gutterBottom>
                   Submission Details
@@ -428,36 +455,40 @@ const SubmissionDetailsPage: React.FC = () => {
                 <Paper variant="outlined" sx={{ p: 2 }}>
                   <List>
                     <ListItem>
-                      <ListItemText 
-                        primary="Submission Name" 
+                      <ListItemText
+                        primary="Submission Name"
                         secondary={submission.name}
                       />
                     </ListItem>
                     <Divider />
                     <ListItem>
-                      <ListItemText 
-                        primary="Submission Type" 
-                        secondary={submission.submission_type || 'Not specified'}
+                      <ListItemText
+                        primary="Submission Type"
+                        secondary={
+                          submission.submission_type || "Not specified"
+                        }
                       />
                     </ListItem>
                     <Divider />
                     <ListItem>
-                      <ListItemText 
-                        primary="Health Canada Reference" 
-                        secondary={submission.health_canada_reference || 'Not assigned'}
+                      <ListItemText
+                        primary="Health Canada Reference"
+                        secondary={
+                          submission.health_canada_reference || "Not assigned"
+                        }
                       />
                     </ListItem>
                     <Divider />
                     <ListItem>
-                      <ListItemText 
-                        primary="Created Date" 
+                      <ListItemText
+                        primary="Created Date"
                         secondary={formatDate(submission.created_at)}
                       />
                     </ListItem>
                     <Divider />
                     <ListItem>
-                      <ListItemText 
-                        primary="Last Updated" 
+                      <ListItemText
+                        primary="Last Updated"
                         secondary={formatDate(submission.updated_at)}
                       />
                     </ListItem>
@@ -470,11 +501,13 @@ const SubmissionDetailsPage: React.FC = () => {
                   Quick Actions
                 </Typography>
                 <Paper variant="outlined" sx={{ p: 2 }}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <Box
+                    sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+                  >
                     <Button
                       variant="contained"
                       startIcon={<DossierIcon />}
-                      onClick={() => navigate(`/dossier/${submission.id}`)}
+                      onClick={() => setTabValue(1)}
                     >
                       Open Dossier Builder
                     </Button>
@@ -485,20 +518,22 @@ const SubmissionDetailsPage: React.FC = () => {
                     >
                       Upload Files
                     </Button>
+                    {/* Demo: not implemented yet
                     <Button
                       variant="outlined"
                       startIcon={<ReportIcon />}
-                      onClick={() => console.log('Generate report')}
+                      onClick={() => console.log("Generate report")}
                     >
                       Generate Report
                     </Button>
                     <Button
                       variant="outlined"
                       startIcon={<DownloadIcon />}
-                      onClick={() => console.log('Export submission')}
+                      onClick={() => console.log("Export submission")}
                     >
                       Export Submission
                     </Button>
+                    */}
                   </Box>
                 </Paper>
 
@@ -511,12 +546,11 @@ const SubmissionDetailsPage: React.FC = () => {
                       <ListItemIcon>
                         <CompleteIcon color="success" />
                       </ListItemIcon>
-                      <ListItemText 
-                        primary="Submission Created" 
+                      <ListItemText
+                        primary="Submission Created"
                         secondary={formatDate(submission.created_at)}
                       />
                     </ListItem>
-                    {/* Add more status history items here */}
                   </List>
                 </Paper>
               </Box>
@@ -529,47 +563,13 @@ const SubmissionDetailsPage: React.FC = () => {
           </TabPanel>
 
           <TabPanel value={tabValue} index={2}>
-            {/* Files Tab */}
-            <Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6">Associated Files</Typography>
-                <Button variant="contained" startIcon={<UploadIcon />}>
-                  Upload Files
-                </Button>
-              </Box>
-              
-              {files.length === 0 ? (
-                <Paper variant="outlined" sx={{ p: 4, textAlign: 'center' }}>
-                  <FileIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-                  <Typography variant="h6" gutterBottom>
-                    No files uploaded yet
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" paragraph>
-                    Upload files related to this submission to get started.
-                  </Typography>
-                  <Button variant="contained" startIcon={<UploadIcon />}>
-                    Upload Files
-                  </Button>
-                </Paper>
-              ) : (
-                <List>
-                  {files.map((file) => (
-                    <ListItem key={file.id} divider>
-                      <ListItemIcon>
-                        <FileIcon />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={file.original_filename}
-                        secondary={`${file.file_type} - ${Math.round(file.file_size / 1024)} KB - ${formatDate(file.created_at)}`}
-                      />
-                      <IconButton>
-                        <DownloadIcon />
-                      </IconButton>
-                    </ListItem>
-                  ))}
-                </List>
-              )}
-            </Box>
+            <FileManagement
+              projectId={submission.project_id}
+              files={files}
+              submissions={[submission]}
+              defaultSubmissionId={submission.id}
+              onFilesChange={() => loadFiles(undefined, submissionId)}
+            />
           </TabPanel>
 
           <TabPanel value={tabValue} index={3}>
@@ -589,8 +589,8 @@ const SubmissionDetailsPage: React.FC = () => {
                     <ListItemIcon>
                       <CompleteIcon color="success" />
                     </ListItemIcon>
-                    <ListItemText 
-                      primary="Submission Created" 
+                    <ListItemText
+                      primary="Submission Created"
                       secondary={`${formatDate(submission.created_at)} - Submission was created and is ready for development`}
                     />
                   </ListItem>
@@ -598,8 +598,8 @@ const SubmissionDetailsPage: React.FC = () => {
                     <ListItemIcon>
                       <PendingIcon color="warning" />
                     </ListItemIcon>
-                    <ListItemText 
-                      primary="In Progress" 
+                    <ListItemText
+                      primary="In Progress"
                       secondary="Currently building submission content and documentation"
                     />
                   </ListItem>
@@ -624,14 +624,19 @@ const SubmissionDetailsPage: React.FC = () => {
             Open Dossier
           </MenuItem>
           <Divider />
-          <MenuItem onClick={openDeleteDialog} sx={{ color: 'error.main' }}>
+          <MenuItem onClick={openDeleteDialog} sx={{ color: "error.main" }}>
             <DeleteIcon sx={{ mr: 1 }} />
             Delete Submission
           </MenuItem>
         </Menu>
 
         {/* Edit Dialog */}
-        <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
+        <Dialog
+          open={editDialogOpen}
+          onClose={() => setEditDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+        >
           <DialogTitle>Edit Submission</DialogTitle>
           <DialogContent>
             {error && (
@@ -639,11 +644,15 @@ const SubmissionDetailsPage: React.FC = () => {
                 {error}
               </Alert>
             )}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+            <Box
+              sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}
+            >
               <TextField
                 label="Submission Name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 required
                 fullWidth
               />
@@ -651,12 +660,21 @@ const SubmissionDetailsPage: React.FC = () => {
                 <InputLabel>Submission Type</InputLabel>
                 <Select
                   value={formData.submission_type}
-                  onChange={(e) => setFormData({ ...formData, submission_type: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      submission_type: e.target.value,
+                    })
+                  }
                   label="Submission Type"
                 >
-                  <MenuItem value="medical_device_license">Medical Device License</MenuItem>
+                  <MenuItem value="medical_device_license">
+                    Medical Device License
+                  </MenuItem>
                   <MenuItem value="ivd_license">IVD License</MenuItem>
-                  <MenuItem value="medical_device_amendment">Medical Device Amendment</MenuItem>
+                  <MenuItem value="medical_device_amendment">
+                    Medical Device Amendment
+                  </MenuItem>
                   <MenuItem value="ivd_amendment">IVD Amendment</MenuItem>
                 </Select>
               </FormControl>
@@ -664,7 +682,9 @@ const SubmissionDetailsPage: React.FC = () => {
                 <InputLabel>Product</InputLabel>
                 <Select
                   value={formData.product_id}
-                  onChange={(e) => setFormData({ ...formData, product_id: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, product_id: e.target.value })
+                  }
                   label="Product"
                 >
                   {products.map((product) => (
@@ -676,11 +696,19 @@ const SubmissionDetailsPage: React.FC = () => {
               </FormControl>
               <DatePicker
                 label="Target Submission Date"
-                value={formData.target_submission_date ? new Date(formData.target_submission_date) : null}
-                onChange={(date) => setFormData({ 
-                  ...formData, 
-                  target_submission_date: date ? date.toISOString().split('T')[0] : '' 
-                })}
+                value={
+                  formData.target_submission_date
+                    ? new Date(formData.target_submission_date)
+                    : null
+                }
+                onChange={(date) =>
+                  setFormData({
+                    ...formData,
+                    target_submission_date: date
+                      ? date.toISOString().split("T")[0]
+                      : "",
+                  })
+                }
                 slotProps={{
                   textField: {
                     fullWidth: true,
@@ -690,29 +718,44 @@ const SubmissionDetailsPage: React.FC = () => {
             </Box>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setEditDialogOpen(false)} disabled={loading.isLoading}>
+            <Button
+              onClick={() => setEditDialogOpen(false)}
+              disabled={loading.isLoading}
+            >
               Cancel
             </Button>
             <Button
               onClick={handleEditSubmission}
               variant="contained"
-              disabled={!formData.name.trim() || !formData.product_id || loading.isLoading}
+              disabled={
+                !formData.name.trim() ||
+                !formData.product_id ||
+                loading.isLoading
+              }
             >
-              {loading.isLoading ? 'Updating...' : 'Update Submission'}
+              {loading.isLoading ? "Updating..." : "Update Submission"}
             </Button>
           </DialogActions>
         </Dialog>
 
         {/* Delete Confirmation Dialog */}
-        <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <Dialog
+          open={deleteDialogOpen}
+          onClose={() => setDeleteDialogOpen(false)}
+        >
           <DialogTitle>Delete Submission</DialogTitle>
           <DialogContent>
             <Typography>
-              Are you sure you want to delete "{submission.name}"? This action cannot be undone and will also delete all associated dossier content and files.
+              Are you sure you want to delete "{submission.name}"? This action
+              cannot be undone and will also delete all associated dossier
+              content and files.
             </Typography>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setDeleteDialogOpen(false)} disabled={loading.isLoading}>
+            <Button
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={loading.isLoading}
+            >
               Cancel
             </Button>
             <Button
@@ -721,7 +764,7 @@ const SubmissionDetailsPage: React.FC = () => {
               variant="contained"
               disabled={loading.isLoading}
             >
-              {loading.isLoading ? 'Deleting...' : 'Delete'}
+              {loading.isLoading ? "Deleting..." : "Delete"}
             </Button>
           </DialogActions>
         </Dialog>

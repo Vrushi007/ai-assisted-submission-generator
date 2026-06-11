@@ -249,7 +249,7 @@ async def generate_section_content_with_ai(
             "section_title": section.section_title,
             "generated_content": generated_content,
             "requirements": requirements,
-            "ai_model": "sarvam-105b-32k"
+            "ai_model": settings.SARVAM_MODEL
         }
         
     except HTTPException:
@@ -321,7 +321,7 @@ async def analyze_document_completeness_with_ai(
             "submission_id": str(submission_id),
             "processed_files": processed_files,
             "analysis": analysis,
-            "ai_model": "sarvam-105b"
+            "ai_model": settings.SARVAM_MODEL
         }
         
     except HTTPException:
@@ -341,10 +341,7 @@ async def get_ai_service_status():
         "sarvam_ai_available": sarvam_ai_service is not None,
         "sarvam_api_key_configured": bool(settings.SARVAM_API_KEY),
         "supported_models": [
-            "sarvam-105b",
-            "sarvam-105b-32k", 
-            "sarvam-30b",
-            "sarvam-30b-16k"
+            settings.SARVAM_MODEL,
         ] if sarvam_ai_service else [],
         "fallback_method": "keyword_matching" if not sarvam_ai_service else None
     }
