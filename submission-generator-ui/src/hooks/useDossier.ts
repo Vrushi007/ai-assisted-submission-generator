@@ -15,6 +15,7 @@ export interface DossierSection {
   content?: string;
   ai_extracted_content?: string;
   ai_confidence_score?: number;
+  is_leaf?: boolean;
   children: DossierSection[];
 }
 
@@ -42,6 +43,7 @@ export interface DossierSectionDetail {
   content: string;
   ai_extracted_content?: string;
   ai_confidence_score?: number;
+  is_leaf?: boolean;
   placeholder_content: string;
   created_at: string;
   updated_at: string;

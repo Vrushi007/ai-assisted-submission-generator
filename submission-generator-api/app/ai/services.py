@@ -63,13 +63,18 @@ class AIProcessingService:
             if not file_record:
                 raise ValueError(f"File not found: {file_id}")
             
-            # Get dossier sections for the submission
+            # Get dossier sections for the submission — leaves only (parents are folders)
+            parent_id_subq = self.db.query(DossierSection.parent_section_id).filter(
+                DossierSection.submission_id == submission_id,
+                DossierSection.parent_section_id.isnot(None),
+            ).subquery()
             dossier_sections = self.db.query(DossierSection).filter(
-                DossierSection.submission_id == submission_id
+                DossierSection.submission_id == submission_id,
+                ~DossierSection.id.in_(parent_id_subq),
             ).all()
-            
+
             if not dossier_sections:
-                raise ValueError(f"No dossier sections found for submission: {submission_id}")
+                raise ValueError(f"No leaf dossier sections found for submission: {submission_id}")
             
             # Parse document
             file_path = file_record.file_path

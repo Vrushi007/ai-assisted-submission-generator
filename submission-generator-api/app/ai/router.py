@@ -23,6 +23,7 @@ from app.ai.sarvam_service import sarvam_ai_service
 from app.ai.background_tasks import background_task_manager
 from app.files.models import UploadedFile
 from app.dossier.models import DossierSection
+from app.dossier.services import is_leaf_section
 
 router = APIRouter()
 
@@ -213,45 +214,106 @@ async def generate_section_content_with_ai(
     section_id: UUID,
     db: Session = Depends(get_db)
 ):
-    """Generate content for a section using Sarvam AI when no document is available."""
-    
+    """Generate content for a section using Sarvam AI.
+
+    If the section's submission has uploaded documents, extract content grounded in
+    those documents (single Sarvam call scoped to this one section). Otherwise fall
+    back to template-only generation from section requirements.
+    """
+
     try:
-        # Get section
         section = db.query(DossierSection).filter(
             DossierSection.id == section_id
         ).first()
-        
+
         if not section:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Dossier section not found"
             )
-        
+
+        if not is_leaf_section(db, section_id):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    "Only leaf sections can be generated. "
+                    f"Section {section.section_code} has child sections — "
+                    "generate content for those instead."
+                ),
+            )
+
         if not sarvam_ai_service:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Sarvam AI service not configured. Please set SARVAM_API_KEY environment variable."
             )
-        
-        # Get requirements for this section
+
         from app.ai.content_mapper import content_mapper
         requirements = content_mapper.get_section_requirements(section.section_code)
-        
-        # Generate content using Sarvam AI
-        generated_content = sarvam_ai_service.generate_section_content(
-            section, 
-            requirements
-        )
-        
+
+        # Gather any uploaded documents for this submission and use them as grounding
+        combined_text = ""
+        processed_files: list[str] = []
+        skipped_files: list[str] = []
+
+        files = db.query(UploadedFile).filter(
+            UploadedFile.submission_id == section.submission_id
+        ).all()
+
+        for file_record in files:
+            try:
+                if not document_parser.can_parse(file_record.file_path):
+                    skipped_files.append(file_record.original_filename)
+                    continue
+                doc_content = document_parser.parse_document(
+                    file_record.file_path, file_record.mime_type
+                )
+                if doc_content and doc_content.text and doc_content.text.strip():
+                    combined_text += f"\n\n--- {file_record.original_filename} ---\n"
+                    combined_text += doc_content.text
+                    processed_files.append(file_record.original_filename)
+                else:
+                    skipped_files.append(file_record.original_filename)
+            except Exception as parse_err:  # noqa: BLE001 — surfaced via skipped list
+                skipped_files.append(f"{file_record.original_filename} (parse error: {parse_err})")
+
+        generated_content: str = ""
+        confidence_score: float | None = None
+        source: str
+
+        if combined_text.strip():
+            mapping = sarvam_ai_service.extract_section_content(
+                combined_text, section, requirements
+            )
+            if mapping and mapping.extracted_content:
+                generated_content = mapping.extracted_content
+                confidence_score = mapping.confidence_score
+                source = "documents"
+            else:
+                # Extraction returned nothing usable — fall back to template
+                generated_content = sarvam_ai_service.generate_section_content(
+                    section, requirements
+                )
+                source = "template_fallback"
+        else:
+            generated_content = sarvam_ai_service.generate_section_content(
+                section, requirements
+            )
+            source = "template"
+
         return {
             "section_id": str(section_id),
             "section_code": section.section_code,
             "section_title": section.section_title,
             "generated_content": generated_content,
             "requirements": requirements,
-            "ai_model": settings.SARVAM_MODEL
+            "ai_model": settings.SARVAM_MODEL,
+            "source": source,
+            "processed_files": processed_files,
+            "skipped_files": skipped_files,
+            "confidence_score": confidence_score,
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:

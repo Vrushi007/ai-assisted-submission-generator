@@ -40,6 +40,8 @@ class Settings(BaseSettings):
     # AI Configuration
     SARVAM_API_KEY: Optional[str] = None
     SARVAM_MODEL: str = "sarvam-105b"
+    SARVAM_MAX_TOKENS: int = 4096
+    SARVAM_MAX_INPUT_CHARS: int = 16000
 
     @property
     def cors_allowed_origins(self) -> list[str]:

@@ -14,7 +14,7 @@ from app.submissions.models import Submission
 from app.products.models import Product
 from app.projects.models import Project
 from app.dossier.models import DossierSection
-from app.dossier.services import DossierGenerationService, DossierContentService
+from app.dossier.services import DossierGenerationService, DossierContentService, LeafSectionRequiredError
 from app.ai.services import AIProcessingService
 
 
@@ -652,6 +652,11 @@ async def get_dossier_section(
     
     # Derive status from is_completed
     status = _derive_section_status(section)
+
+    # Section is a leaf iff no other section lists it as parent
+    is_leaf = db.query(DossierSection.id).filter(
+        DossierSection.parent_section_id == section.id
+    ).first() is None
     
     # Generate placeholder content based on section info
     placeholder_content = f"""# {section.section_title}
@@ -681,6 +686,7 @@ Please provide the required documentation and information for this section.
         "placeholder_content": section.placeholder_content or placeholder_content,
         "ai_extracted_content": section.ai_extracted_content or "",
         "ai_confidence_score": section.ai_confidence_score or 0.0,
+        "is_leaf": is_leaf,
         "created_at": section.created_at.isoformat(),
         "updated_at": section.updated_at.isoformat()
     }
@@ -725,6 +731,11 @@ async def update_dossier_section_content(
             "status": section_status,
             "completion_percentage": updated_section.completion_percentage
         }
+    except LeafSectionRequiredError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -775,6 +786,11 @@ async def mark_dossier_section_complete(
             "status": section_status,
             "completion_percentage": updated_section.completion_percentage
         }
+    except LeafSectionRequiredError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

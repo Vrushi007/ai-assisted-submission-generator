@@ -29,7 +29,8 @@ class SarvamAIService:
         self.model_config = {
             "model": settings.SARVAM_MODEL,
             "temperature": 0.3,  # Lower temperature for more consistent regulatory content
-            "reasoning_effort": "medium"  # Balanced reasoning for document analysis
+            "reasoning_effort": "medium",  # Balanced reasoning for document analysis
+            "max_tokens": settings.SARVAM_MAX_TOKENS,
         }
     
     def extract_section_content(
@@ -81,7 +82,8 @@ class SarvamAIService:
                 messages=request_data["messages"],
                 model=request_data["model"],
                 temperature=request_data["temperature"],
-                reasoning_effort=request_data["reasoning_effort"]
+                reasoning_effort=request_data["reasoning_effort"],
+                max_tokens=request_data["max_tokens"],
             )
             
             duration = time.time() - start_time
@@ -197,7 +199,8 @@ class SarvamAIService:
                 messages=request_data["messages"],
                 model=request_data["model"],
                 temperature=request_data["temperature"],
-                reasoning_effort=request_data["reasoning_effort"]
+                reasoning_effort=request_data["reasoning_effort"],
+                max_tokens=request_data["max_tokens"],
             )
             
             duration = time.time() - start_time
@@ -280,6 +283,7 @@ class SarvamAIService:
                 "model": settings.SARVAM_MODEL,  # Use full model for complex analysis
                 "temperature": 0.2,
                 "reasoning_effort": "high",
+                "max_tokens": settings.SARVAM_MAX_TOKENS,
                 "required_sections_count": len(required_sections)
             }
             
@@ -296,7 +300,8 @@ class SarvamAIService:
                 messages=request_data["messages"],
                 model=request_data["model"],
                 temperature=request_data["temperature"],
-                reasoning_effort=request_data["reasoning_effort"]
+                reasoning_effort=request_data["reasoning_effort"],
+                max_tokens=request_data["max_tokens"],
             )
             
             duration = time.time() - start_time
@@ -425,7 +430,7 @@ Focus on:
 {requirements_text}
 
 **Document Content:**
-{document_text[:8000]}  # Limit to avoid token limits
+{document_text[:settings.SARVAM_MAX_INPUT_CHARS]}
 
 **Instructions:**
 1. Extract all relevant information for this section from the document
@@ -503,7 +508,7 @@ Generate the complete section content now:"""
 {sections_list}
 
 **Document Content:**
-{document_text[:10000]}  # Limit for analysis
+{document_text[:settings.SARVAM_MAX_INPUT_CHARS]}
 
 **Analysis Required:**
 1. Coverage assessment for each required section

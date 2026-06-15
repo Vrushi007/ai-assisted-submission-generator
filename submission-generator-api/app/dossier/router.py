@@ -145,6 +145,7 @@ async def get_dossier_section(
     section.extracted_content_count = len(section.extracted_contents)
     section.reviews_count = len(section.reviews)
     section.missing_content_alerts = len([alert for alert in section.missing_content_alerts if not alert.is_resolved])
+    section.is_leaf = len(section.child_sections) == 0
     
     return section
 
@@ -262,6 +263,7 @@ async def get_dossier_structure(
             extracted_content_count=0,  # Would be computed
             reviews_count=0,  # Would be computed
             missing_content_alerts=0,  # Would be computed
+            is_leaf=len(children) == 0,
             children=children
         )
         

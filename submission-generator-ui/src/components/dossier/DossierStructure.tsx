@@ -74,6 +74,7 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, level, onSectionClic
   };
 
   const hasChildren = section.children && section.children.length > 0;
+  const isLeaf = section.is_leaf ?? !hasChildren;
 
   return (
     <Box sx={{ ml: level * 2 }}>
@@ -85,7 +86,13 @@ const SectionItem: React.FC<SectionItemProps> = ({ section, level, onSectionClic
           '&:hover': { bgcolor: 'action.hover' },
           borderLeft: section.is_required ? '4px solid #f44336' : '4px solid transparent'
         }}
-        onClick={() => onSectionClick(section.id)}
+        onClick={() => {
+          if (isLeaf) {
+            onSectionClick(section.id);
+          } else {
+            setExpanded((prev) => !prev);
+          }
+        }}
       >
         <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -210,6 +217,7 @@ const SectionDetailDialog: React.FC<{
   const [content, setContent] = useState('');
   const [editMode, setEditMode] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [lastGenResult, setLastGenResult] = useState<any | null>(null);
 
   React.useEffect(() => {
     if (section) {
@@ -218,6 +226,7 @@ const SectionDetailDialog: React.FC<{
       setContent(initialContent);
       setEditMode(!section.content); // Only auto-edit if no user content exists
       setIsCompleted(section.status === 'completed');
+      setLastGenResult(null);
     }
   }, [section]);
 
@@ -255,6 +264,7 @@ const SectionDetailDialog: React.FC<{
       if (result && result.generated_content) {
         setContent(result.generated_content);
         setEditMode(true); // Enable editing so user can review/modify
+        setLastGenResult(result);
       }
     } catch (error) {
       console.error('Failed to generate content:', error);
@@ -333,7 +343,7 @@ const SectionDetailDialog: React.FC<{
                 onClick={handleGenerateContent}
                 size="small"
                 variant="outlined"
-                disabled={aiProcessing}
+                disabled={aiProcessing || section.is_leaf === false}
               >
                 Generate with AI
               </Button>
@@ -341,12 +351,60 @@ const SectionDetailDialog: React.FC<{
                 startIcon={<EditIcon />}
                 onClick={() => setEditMode(!editMode)}
                 size="small"
+                disabled={section.is_leaf === false}
               >
                 {editMode ? 'Cancel Edit' : 'Edit Content'}
               </Button>
             </Box>
           </Box>
-          
+
+          {section.is_leaf === false && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              This is a parent section (folder). Content lives in its child
+              sections — open one of them to edit or generate content.
+            </Alert>
+          )}
+
+          {lastGenResult && (
+            <Alert
+              severity={
+                lastGenResult.source === 'documents'
+                  ? 'success'
+                  : lastGenResult.source === 'template_fallback'
+                  ? 'warning'
+                  : 'info'
+              }
+              sx={{ mb: 2 }}
+              onClose={() => setLastGenResult(null)}
+            >
+              {lastGenResult.source === 'documents' && (
+                <>
+                  Generated from {lastGenResult.processed_files?.length || 0} uploaded
+                  document{(lastGenResult.processed_files?.length || 0) === 1 ? '' : 's'}
+                  {lastGenResult.confidence_score != null && (
+                    <> &middot; confidence {Math.round(lastGenResult.confidence_score * 100)}%</>
+                  )}
+                  {lastGenResult.processed_files?.length > 0 && (
+                    <> &middot; {lastGenResult.processed_files.join(', ')}</>
+                  )}
+                </>
+              )}
+              {lastGenResult.source === 'template_fallback' && (
+                <>
+                  Could not extract section-specific content from the uploaded
+                  document{(lastGenResult.processed_files?.length || 0) === 1 ? '' : 's'}.
+                  Returned a template skeleton instead — review the [PLACEHOLDER] markers.
+                </>
+              )}
+              {lastGenResult.source === 'template' && (
+                <>
+                  No documents uploaded for this submission — returned a template
+                  skeleton. Upload source documents to ground the AI in your content.
+                </>
+              )}
+            </Alert>
+          )}
+
           <TextField
             multiline
             rows={12}

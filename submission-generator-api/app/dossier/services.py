@@ -13,6 +13,20 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 
 from app.dossier.models import DossierSection
+
+
+class LeafSectionRequiredError(Exception):
+    """Raised when a write operation targets a non-leaf (parent) dossier section."""
+
+
+def is_leaf_section(db: Session, section_id: uuid.UUID) -> bool:
+    """A section is a leaf iff no other section lists it as parent."""
+    return (
+        db.query(DossierSection.id)
+        .filter(DossierSection.parent_section_id == section_id)
+        .first()
+        is None
+    )
 from app.ai.content_mapper import content_mapper
 from app.submissions.models import Submission
 from app.core.config import settings
@@ -236,6 +250,11 @@ class DossierGenerationService:
         # Build hierarchical structure using a more robust approach
         sections_dict = {}
         root_sections = []
+
+        # Pre-compute which section ids are parents (have at least one child)
+        parent_ids = {
+            str(s.parent_section_id) for s in sections if s.parent_section_id is not None
+        }
         
         # First pass: Create all section data and organize by parent
         for section in sections:
@@ -261,6 +280,7 @@ class DossierGenerationService:
                 "content": section.content,
                 "ai_extracted_content": section.ai_extracted_content,
                 "ai_confidence_score": section.ai_confidence_score,
+                "is_leaf": str(section.id) not in parent_ids,
                 "children": []
             }
             
@@ -317,6 +337,12 @@ class DossierContentService:
         
         if not section:
             raise ValueError(f"Dossier section not found: {section_id}")
+
+        if not is_leaf_section(self.db, section_id):
+            raise LeafSectionRequiredError(
+                "Only leaf sections can hold content. "
+                f"Section {section.section_code} has child sections — edit those instead."
+            )
         
         # Update the actual content in the database
         section.content = content
@@ -361,6 +387,13 @@ class DossierContentService:
         
         if not section:
             raise ValueError(f"Dossier section not found: {section_id}")
+
+        if not is_leaf_section(self.db, section_id):
+            raise LeafSectionRequiredError(
+                "Only leaf sections can be marked complete. "
+                f"Section {section.section_code} has child sections — "
+                "its completion is derived from theirs."
+            )
         
         section.is_completed = True
         section.completion_percentage = 100

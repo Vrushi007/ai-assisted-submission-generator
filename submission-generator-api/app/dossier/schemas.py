@@ -58,6 +58,7 @@ class DossierSectionResponse(DossierSectionBase, UUIDSchema, TimestampSchema):
     extracted_content_count: Optional[int] = Field(None, description="Number of linked extracted content items")
     reviews_count: Optional[int] = Field(None, description="Number of reviews for this section")
     missing_content_alerts: Optional[int] = Field(None, description="Number of missing content alerts")
+    is_leaf: Optional[bool] = Field(None, description="True if this section has no children and can hold content")
 
 
 class DossierSectionTree(DossierSectionResponse):
