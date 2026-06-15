@@ -20,7 +20,6 @@ from app.ai.models import (
 )
 from app.ai.document_parser import document_parser
 from app.ai.sarvam_service import sarvam_ai_service
-from app.ai.background_tasks import background_task_manager
 from app.files.models import UploadedFile
 from app.dossier.models import DossierSection
 from app.dossier.services import is_leaf_section
@@ -106,44 +105,64 @@ async def auto_populate_submission(
     submission_id: UUID,
     db: Session = Depends(get_db)
 ):
-    """Start background auto-population of all dossier sections with AI-extracted content."""
-    
-    try:
-        # Check if files exist
-        files = db.query(UploadedFile).filter(
-            UploadedFile.submission_id == submission_id
-        ).all()
-        
-        if not files:
-            return {
-                "message": "No files found for this submission",
-                "task_id": None,
-                "background_processing": False
-            }
-        
-        # Start background task
-        task_id = background_task_manager.start_auto_populate_task(submission_id)
-        
+    """Process every uploaded file for a submission and populate AI-extracted content.
+
+    This runs synchronously: the HTTP response only returns once every file has
+    been processed. Expect this to take a while on submissions with many files
+    (each file fans out one Sarvam call per leaf section).
+    """
+
+    files = db.query(UploadedFile).filter(
+        UploadedFile.submission_id == submission_id
+    ).all()
+
+    if not files:
         return {
-            "message": "🤖 AI processing started in the background! Check the Dossier tab to see sections being updated in real-time.",
-            "task_id": task_id,
-            "background_processing": True,
-            "total_files": len(files),
-            "instructions": {
-                "next_steps": [
-                    "Navigate to the 'Dossier' tab to see live progress",
-                    "Sections will show 'AI Generated' badges as they're processed",
-                    "You can continue working while AI processes your documents",
-                    "Check task status using the task_id if needed"
-                ]
-            }
+            "message": "No files found for this submission",
+            "files_processed": 0,
+            "sections_updated": 0,
+            "updated_section_ids": [],
+            "errors": [],
         }
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to start auto-population: {str(e)}"
-        )
+
+    ai_service = AIProcessingService(db)
+    updated_section_ids: set[str] = set()
+    files_processed = 0
+    errors: list[dict[str, str]] = []
+
+    for file_record in files:
+        try:
+            response = ai_service.process_uploaded_file(
+                file_id=file_record.id,
+                submission_id=submission_id,
+                auto_populate=True,
+            )
+            if response.extraction_result.success:
+                files_processed += 1
+                for sid in response.sections_updated or []:
+                    updated_section_ids.add(str(sid))
+            else:
+                errors.append({
+                    "filename": file_record.original_filename,
+                    "error": response.extraction_result.error_message or "extraction failed",
+                })
+        except Exception as e:  # noqa: BLE001 — surface per-file errors, keep going
+            errors.append({
+                "filename": file_record.original_filename,
+                "error": str(e),
+            })
+
+    return {
+        "message": (
+            f"Auto-population completed: {len(updated_section_ids)} sections updated "
+            f"from {files_processed}/{len(files)} files"
+        ),
+        "files_processed": files_processed,
+        "total_files": len(files),
+        "sections_updated": len(updated_section_ids),
+        "updated_section_ids": sorted(updated_section_ids),
+        "errors": errors,
+    }
 
 
 @router.get("/stats")
@@ -406,71 +425,6 @@ async def get_ai_service_status():
             settings.SARVAM_MODEL,
         ] if sarvam_ai_service else [],
         "fallback_method": "keyword_matching" if not sarvam_ai_service else None
-    }
-
-
-@router.get("/task-status/{task_id}")
-async def get_task_status(task_id: str):
-    """Get the status of a background AI processing task."""
-    
-    task_status = background_task_manager.get_task_status(task_id)
-    
-    if not task_status:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Task not found"
-        )
-    
-    return {
-        "task_id": task_id,
-        "status": task_status["status"],
-        "progress": task_status.get("progress", 0),
-        "current_message": task_status.get("current_message", ""),
-        "processed_files": task_status.get("processed_files", 0),
-        "total_files": task_status.get("total_files", 0),
-        "updated_sections": len(task_status.get("updated_sections", [])),
-        "errors": task_status.get("errors", []),
-        "result": task_status.get("result"),
-        "started_at": task_status.get("started_at"),
-        "completed_at": task_status.get("completed_at")
-    }
-
-
-@router.get("/active-tasks/{submission_id}")
-async def get_active_tasks_for_submission(submission_id: UUID):
-    """Get all active AI processing tasks for a submission."""
-    
-    active_tasks = []
-    
-    # Check active tasks
-    for task_id, task_data in background_task_manager.active_tasks.items():
-        if task_data.get("submission_id") == str(submission_id):
-            active_tasks.append({
-                "task_id": task_id,
-                "status": task_data["status"],
-                "progress": task_data.get("progress", 0),
-                "current_message": task_data.get("current_message", ""),
-                "started_at": task_data.get("started_at")
-            })
-    
-    # Check recent completed tasks (last hour)
-    current_time = time.time()
-    for task_id, task_data in background_task_manager.task_results.items():
-        if (task_data.get("submission_id") == str(submission_id) and 
-            current_time - task_data.get("completed_at", 0) < 3600):  # Last hour
-            active_tasks.append({
-                "task_id": task_id,
-                "status": task_data["status"],
-                "progress": 100,
-                "current_message": "Completed",
-                "completed_at": task_data.get("completed_at"),
-                "result": task_data.get("result")
-            })
-    
-    return {
-        "submission_id": str(submission_id),
-        "active_tasks": active_tasks,
-        "has_active_processing": len([t for t in active_tasks if t["status"] in ["starting", "running"]]) > 0
     }
 
 

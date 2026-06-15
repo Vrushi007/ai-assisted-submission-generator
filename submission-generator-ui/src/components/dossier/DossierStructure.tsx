@@ -530,9 +530,7 @@ const DossierStructure: React.FC<DossierStructureProps> = ({ submissionId }) => 
     setSelectedSection
   } = useDossier(submissionId);
   
-  const { getActiveTasksForSubmission } = useAI();
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
-  const [aiTasks, setAiTasks] = useState<any>(null);
 
   const handleSectionClick = async (sectionId: string) => {
     await loadSection(submissionId, sectionId);
@@ -554,25 +552,6 @@ const DossierStructure: React.FC<DossierStructureProps> = ({ submissionId }) => 
       // Dossier will be automatically reloaded by the hook
     }
   };
-
-  // Check for active AI tasks periodically
-  React.useEffect(() => {
-    const checkAITasks = async () => {
-      const tasks = await getActiveTasksForSubmission(submissionId);
-      setAiTasks(tasks);
-    };
-
-    checkAITasks();
-    
-    // Poll every 5 seconds if there are active tasks
-    const interval = setInterval(() => {
-      if (aiTasks?.has_active_processing) {
-        checkAITasks();
-      }
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [submissionId, getActiveTasksForSubmission, aiTasks?.has_active_processing]);
 
   const stats = getDossierStats();
 
@@ -629,37 +608,6 @@ const DossierStructure: React.FC<DossierStructureProps> = ({ submissionId }) => 
           Regenerate
         </Button>
       </Box>
-
-      {/* AI Processing Status */}
-      {aiTasks?.has_active_processing && (
-        <Alert 
-          severity="info" 
-          sx={{ mb: 3 }}
-          icon={<AIIcon />}
-        >
-          <Box>
-            <Typography variant="subtitle2" gutterBottom>
-              🤖 AI Processing in Progress
-            </Typography>
-            <Typography variant="body2">
-              AI is analyzing your documents and updating dossier sections in the background. 
-              Sections will show "AI Generated" badges as they're completed.
-            </Typography>
-            {aiTasks.active_tasks.map((task: any) => (
-              <Box key={task.task_id} sx={{ mt: 1 }}>
-                <Typography variant="caption" display="block">
-                  {task.current_message || `Progress: ${task.progress}%`}
-                </Typography>
-                <LinearProgress 
-                  variant="determinate" 
-                  value={task.progress} 
-                  sx={{ height: 4, borderRadius: 2 }}
-                />
-              </Box>
-            ))}
-          </Box>
-        </Alert>
-      )}
 
       {/* Stats */}
       {stats && (

@@ -486,16 +486,6 @@ class ApiService {
     const response = await this.api.get('/ai/ai-status');
     return response.data;
   }
-
-  async getTaskStatus(taskId: string): Promise<any> {
-    const response = await this.api.get(`/ai/task-status/${taskId}`);
-    return response.data;
-  }
-
-  async getActiveTasksForSubmission(submissionId: string): Promise<any> {
-    const response = await this.api.get(`/ai/active-tasks/${submissionId}`);
-    return response.data;
-  }
 }
 
 export const apiService = new ApiService();

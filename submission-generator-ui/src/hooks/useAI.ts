@@ -203,32 +203,6 @@ export const useAI = () => {
     }
   }, []);
 
-  const getTaskStatus = useCallback(async (taskId: string): Promise<any> => {
-    setError(null);
-    
-    try {
-      const result = await apiService.getTaskStatus(taskId);
-      return result;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || err.message || 'Failed to get task status';
-      setError(errorMessage);
-      return null;
-    }
-  }, []);
-
-  const getActiveTasksForSubmission = useCallback(async (submissionId: string): Promise<any> => {
-    setError(null);
-    
-    try {
-      const result = await apiService.getActiveTasksForSubmission(submissionId);
-      return result;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || err.message || 'Failed to get active tasks';
-      setError(errorMessage);
-      return null;
-    }
-  }, []);
-
   return {
     processing,
     error,
@@ -241,8 +215,6 @@ export const useAI = () => {
     generateContent,
     analyzeDocuments,
     getServiceStatus,
-    getTaskStatus,
-    getActiveTasksForSubmission,
     setError
   };
 };

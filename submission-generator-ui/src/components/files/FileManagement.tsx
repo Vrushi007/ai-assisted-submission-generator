@@ -267,19 +267,22 @@ const FileManagement: React.FC<FileManagementProps> = ({
       setError(null);
       const result = await autoPopulate(selectedSubmissionId);
 
-      if (result && result.background_processing) {
-        // Show success message for background processing
-        alert(
-          `🤖 ${result.message}\n\n📋 Next Steps:\n• Go to the 'Dossier' tab to see live progress\n• Sections will update automatically as AI processes them\n• You can continue working while AI runs in the background`,
-        );
-        onFilesChange?.();
-      } else if (result) {
-        // Fallback for immediate processing
-        alert(
-          `Auto-population completed! ${result.sections_updated} sections updated from ${result.files_processed} files.`,
-        );
-        onFilesChange?.();
+      if (!result) return;
+
+      const errorCount = Array.isArray(result.errors) ? result.errors.length : 0;
+      let message = `Auto-population completed! ${result.sections_updated ?? 0} sections updated from ${result.files_processed ?? 0}/${result.total_files ?? 0} files.`;
+      if (errorCount > 0) {
+        message += `\n\n${errorCount} file(s) had errors:\n` +
+          result.errors
+            .slice(0, 5)
+            .map((e: any) => `• ${e.filename}: ${e.error}`)
+            .join("\n");
+        if (errorCount > 5) {
+          message += `\n…and ${errorCount - 5} more`;
+        }
       }
+      alert(message);
+      onFilesChange?.();
     } catch (err: any) {
       setError(err.message || "Auto-population failed");
     }
